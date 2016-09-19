@@ -40,7 +40,7 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
         }
 
         //LUIS recognizer
-        var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=c413b2ef-382c-45bd-8ff0-f76d60e2a821&subscription-key=6d0966209c6e4f6b835ce34492f3e6d9&q=');
+        var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=6bcb8477-a066-4e21-a15e-864af9bda1b9&subscription-key=57964100a34f4d1aa3c5cd619690f610&q=');
         var dialog = new builder.IntentDialog({ recognizers: [recognizer] });
         bot.dialog('/', dialog);
 
@@ -71,6 +71,36 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
                 // delete their data
             }
         });
+
+//=========================================================
+// Bots Intents dialogs
+//=========================================================
+
+dialog.matches('hello', [
+    function (session, args, next) {
+        console.log(session);
+        session.send("¡Hola "+getFirstName(session.message.user.name)+"! (highfive)");
+    }
+]);
+
+dialog.matches('roamersNumber', [
+    function (session, args, next) {
+        var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
+        if (!country) {
+            builder.Prompts.text(session, "¿De qué país querrías saber el número de roamers?");
+        } else {
+            next({ response: country.entity });
+        }
+    },
+    function (session, results) {
+        console.log(results);
+        if (results.response) {
+            session.send("Métrica recuperada: #Roamers de %s", results.response);
+        } else {
+            session.send("Métrica recuperada: #Roamers global");
+        }
+    }
+]);
 
 //=========================================================
 // Bots Dialogs

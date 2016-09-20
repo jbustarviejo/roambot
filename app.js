@@ -2,12 +2,11 @@ var restify = require('restify');
 var builder = require('botbuilder');
 var MongoClient = require('mongodb').MongoClient;
 
-var database={};
-
 //=========================================================
 // Bot Setup
 //=========================================================
 
+var database={};
 var production=false;
 var debug=false;
 

@@ -61,119 +61,119 @@ database.initDatabase=function(callback){
 
 database.initDatabase(function(){
                     
-if(!production){
-    var connector = new builder.ConsoleConnector().listen();
-    var bot = new builder.UniversalBot(connector);
-}else{
-    // Setup Restify Server
-    var server = restify.createServer();
-    server.listen(process.env.port || process.env.PORT || 3978, function () {
-       console.log('%s listening to %s', server.name, server.url); 
-    });
-      
-    // Create chat bot
-    var connector = new builder.ChatConnector({
-        appId: "1b0298a9-3405-4cc8-9584-5b3424f2fc19",
-        appPassword: "QDvJQbqFZzWLagySMFv0qMm"
-    });
-    var bot = new builder.UniversalBot(connector);
-    server.post('/', connector.listen());
-}
-
-//LUIS recognizer
-var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=6bcb8477-a066-4e21-a15e-864af9bda1b9&subscription-key=57964100a34f4d1aa3c5cd619690f610&q=');
-var dialog = new builder.IntentDialog({ recognizers: [recognizer] });
-bot.dialog('/', dialog);
-
-bot.on('contactRelationUpdate', function (message) {
-    if (message.action === 'add') {
-        database.getUser(message.user.id, function(dbUser){
-            if(!dbUser){
-                var name = message.user ? message.user.name: null;
-                name = getFirstName(name);
-                name = name ? " "+name : null;
-                database.users.insert({_id: message.user.id ,createdAt: new Date(), userName: name, authorized: false});
-                var reply = new builder.Message()
-                        .address(message.address)
-                        .text("¡Hola %s! Soy Roambot, un placer conocerte :)", name);
-                bot.send(reply);
-            }else{
-                //if(dbUser.authorized){
-                var name = message.user ? message.user.name: null;
-                name = getFirstName(name);
-                name = name ? " "+name : null;
-                var reply = new builder.Message()
-                        .address(message.address)
-                        .text("¡Hola de nuevo %s! ;)", getFirstName(name) || '');
-                bot.send(reply);
-            }
+    if(!production){
+        var connector = new builder.ConsoleConnector().listen();
+        var bot = new builder.UniversalBot(connector);
+    }else{
+        // Setup Restify Server
+        var server = restify.createServer();
+        server.listen(process.env.port || process.env.PORT || 3978, function () {
+           console.log('%s listening to %s', server.name, server.url); 
         });
-    } else {
-        // delete their data
+          
+        // Create chat bot
+        var connector = new builder.ChatConnector({
+            appId: "1b0298a9-3405-4cc8-9584-5b3424f2fc19",
+            appPassword: "QDvJQbqFZzWLagySMFv0qMm"
+        });
+        var bot = new builder.UniversalBot(connector);
+        server.post('/', connector.listen());
     }
-});
 
-//=========================================================
-// Bots Intents dialogs
-//=========================================================
+    //LUIS recognizer
+    var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=6bcb8477-a066-4e21-a15e-864af9bda1b9&subscription-key=57964100a34f4d1aa3c5cd619690f610&q=');
+    var dialog = new builder.IntentDialog({ recognizers: [recognizer] });
+    bot.dialog('/', dialog);
 
-dialog.matches('hello', [
-    function (session, args, next) {
-        console.log(session);
-        session.send("¡Hola "+getFirstName(session.message.user.name)+"! (highfive)");
-    }
-]);
-
-dialog.matches('roamersNumberOutbound', [
-    function (session, args, next) {
-        console.log("Model for outbound: ",args);
-        var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
-        var time = builder.EntityRecognizer.findEntity(args.entities, 'time');
-        if (!country) {
-            builder.Prompts.text(session, "¿De qué país querrías saber el número de roamers?");
+    bot.on('contactRelationUpdate', function (message) {
+        if (message.action === 'add') {
+            database.getUser(message.user.id, function(dbUser){
+                if(!dbUser){
+                    var name = message.user ? message.user.name: null;
+                    name = getFirstName(name);
+                    name = name ? " "+name : null;
+                    database.users.insert({_id: message.user.id ,createdAt: new Date(), userName: name, authorized: false});
+                    var reply = new builder.Message()
+                            .address(message.address)
+                            .text("¡Hola %s! Soy Roambot, un placer conocerte :)", name);
+                    bot.send(reply);
+                }else{
+                    //if(dbUser.authorized){
+                    var name = message.user ? message.user.name: null;
+                    name = getFirstName(name);
+                    name = name ? " "+name : null;
+                    var reply = new builder.Message()
+                            .address(message.address)
+                            .text("¡Hola de nuevo %s! ;)", getFirstName(name) || '');
+                    bot.send(reply);
+                }
+            });
         } else {
-            next({ country: country.entity, time: time});
+            // delete their data
         }
-    },
-    function (session, results) {
-        console.log(results);
-        if (results.country) {
-            if(results.time){
-                session.send("Métrica recuperada: #Roamers outbound de %s para %s", results.country, results.time);
-                console.log("Métrica recuperada: #Roamers outbound de %s para %s", results.country, results.time);
-            }else{
-                session.send("Métrica recuperada: #Roamers outbound de %s (más reciente)", results.country);
-                metrics.getOutboundRoamers(session, results.country, results.time);   
+    });
+
+    //=========================================================
+    // Bots Intents dialogs
+    //=========================================================
+
+    dialog.matches('hello', [
+        function (session, args, next) {
+            console.log(session);
+            session.send("¡Hola "+getFirstName(session.message.user.name)+"! (highfive)");
+        }
+    ]);
+
+    dialog.matches('roamersNumberOutbound', [
+        function (session, args, next) {
+            console.log("Model for outbound: ",args);
+            var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
+            var time = builder.EntityRecognizer.findEntity(args.entities, 'time');
+            if (!country) {
+                builder.Prompts.text(session, "¿De qué país querrías saber el número de roamers?");
+            } else {
+                next({ country: country.entity, time: time});
             }
-        } else {
-            session.send("Métrica recuperada: #Roamers global");
-        }
-    }
-]);
-
-dialog.matches('roamersNumberInbound', [
-    function (session, args, next) {
-        console.log("Model for inbound:",args);
-        var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
-        if (!country) {
-            builder.Prompts.text(session, "¿De qué país querrías saber el número de roamers?");
-        } else {
-            next({ response: country.entity });
-        }
-    },
-    function (session, results) {
-        var time = builder.EntityRecognizer.findEntity(args.entities, 'time');
-        if (results.response) {
-            if(time){
-                session.send("Métrica recuperada: #Roamers inbound de %s para %s", results.response, time);
-            }else{
-                session.send("Métrica recuperada: #Roamers inbound de %s (más reciente)", results.response);
+        },
+        function (session, results) {
+            console.log(results);
+            if (results.country) {
+                if(results.time){
+                    session.send("Métrica recuperada: #Roamers outbound de %s para %s", results.country, results.time);
+                    console.log("Métrica recuperada: #Roamers outbound de %s para %s", results.country, results.time);
+                }else{
+                    session.send("Métrica recuperada: #Roamers outbound de %s (más reciente)", results.country);
+                    metrics.getOutboundRoamers(session, results.country, results.time);   
+                }
+            } else {
+                session.send("Métrica recuperada: #Roamers global");
             }
-        } else {
-            session.send("Métrica recuperada: #Roamers global");
         }
-    }
-]);
+    ]);
+
+    dialog.matches('roamersNumberInbound', [
+        function (session, args, next) {
+            console.log("Model for inbound:",args);
+            var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
+            if (!country) {
+                builder.Prompts.text(session, "¿De qué país querrías saber el número de roamers?");
+            } else {
+                next({ response: country.entity });
+            }
+        },
+        function (session, results) {
+            var time = builder.EntityRecognizer.findEntity(args.entities, 'time');
+            if (results.response) {
+                if(time){
+                    session.send("Métrica recuperada: #Roamers inbound de %s para %s", results.response, time);
+                }else{
+                    session.send("Métrica recuperada: #Roamers inbound de %s (más reciente)", results.response);
+                }
+            } else {
+                session.send("Métrica recuperada: #Roamers global");
+            }
+        }
+    ]);
 
 //=========================================================
 // Bots Dialogs

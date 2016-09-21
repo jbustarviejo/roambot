@@ -41,7 +41,8 @@ database.initDatabase=function(callback){
                 userName: user.userName,
                 welcomed: user.welcomed || false,
                 authorized: user.authorized || false,
-                validationCode: user.validationCode
+                validationCode: user.validationCode,
+                email: user.email
             }}, function(){
                 callback && callback();
             });
@@ -120,7 +121,7 @@ database.initDatabase(function(){
     dialog.matches('hello', [
         function (session, args, next) {
             console.log(session);
-            session.send("¡Hola "+getFirstName(session.message.user.name)+"! (highfive)");
+            session.send("(wave)");
         }
     ]);
 
@@ -201,7 +202,7 @@ database.initDatabase(function(){
                 database.users.insert(dbUser);
             }
             if(!dbUser.authorized){
-                session.replaceDialog('/get-user-auth', dbUser);
+                session.replaceDialog('/get-user-auth', {dbUser: dbUser});
             }else{
                 session.dbUser=dbUser;
                 next();
@@ -209,39 +210,46 @@ database.initDatabase(function(){
         });
     });
 
+    dialog.onDefault(builder.DialogAction.send("No te he entendido bien, estoy aún aprendiendo a hablar y me cuesta un poco"));
+
     bot.dialog('/get-user-auth', [
         function (session, args, next) {
-            console.log("Args: ", args);
+            console.log("Args: ", args, session);
             if(!session.userData.dbUser && !args){
                 throw Exception("Error: No dbUser received");
             }
-            if(args){
-                session.userData.dbUser=args;
+            if(args && !session.userData.dbUser && args.dbUser){
+                session.userData.dbUser=args.dbUser;
             }
             if(!session.dialogData.welcomed){
                 session.dialogData.welcomed=true;
-                // call custom prompt
-                session.beginDialog('/validate-email-dialog',true);
+                if(!session.userData.dbUser.email){
+                    // call custom prompt
+                    session.beginDialog('/validate-email-dialog',true);
+                }else{
+                    next();
+                }
             }else{
                 next();
             }
         },
         //Request & validate email
         function (session, result, next) {
-            console.log("Res1: ",session);
-            if(!session.dialogData.email){
+            console.log("Res1: ",result);
+            if(session.userData.dbUser.email){
+                session.beginDialog('/validate-code-dialog', {welcome: true, dbUser: session.userData.dbUser, codeTimesEntered: 0});
+            }else if(!session.dialogData.email){
                 session.dialogData.email=session.message.text.trim().toLowerCase();
                 session.userData.dbUser.email=session.dialogData.email;
-                session.userData.dbUser.validationCode=42;
+                session.userData.dbUser.validationCode=generateRandomPass();
 
-                // call custom prompt
-                session.beginDialog('/validate-code-dialog', true);
+                session.beginDialog('/validate-code-dialog', {welcome: true, dbUser: session.userData.dbUser, codeTimesEntered: 0});
             }else{
                 next();
             }
         },
         function (session, result, next) {
-            console.log("Res2: ",session);
+            console.log("Res2: ",result, session);
             session.userData.dbUser.authorized=true;
             database.updateUser(session.userData.dbUser, function(){
                 session.endDialogWithResult({result: {ok: true, dbUser: session.userData.dbUser}});    
@@ -249,12 +257,10 @@ database.initDatabase(function(){
         }
     ]);
 
-    dialog.onDefault(builder.DialogAction.send("No te he entendido bien, estoy aún aprendiendo a hablar y me cuesta un poco"));
-
     bot.dialog('/validate-email-dialog', [
         function (session, args) {
             if(args===true){
-                session.send(session, "Para usar mis servicios es necesario confirmar tu identidad, te voy a enviar un código a tu email para que me lo escribas y así te pueda identificar");
+                session.send("Para usar mis servicios es necesario confirmar tu identidad, te voy a enviar un código a tu email para que me lo escribas y así te pueda identificar");
             }
             // call custom prompt
             session.beginDialog('/validate-email-prompt', { 
@@ -265,8 +271,8 @@ database.initDatabase(function(){
         function (session, results) {
             // Check their answer
             if (results.response) {
-                session.send("¡Así es!");
-                session.endDialogWithResult();
+                session.send("¡Genial! Ese me vale");
+                session.endDialogWithResult(results.response);
             } else{
                 session.send("Debes introducir un email corporativo válido y este no lo es :(\n");
             }
@@ -274,7 +280,6 @@ database.initDatabase(function(){
     ]);
 
     bot.dialog('/validate-email-prompt', builder.DialogAction.validatedPrompt(builder.PromptType.text, function (response) {
-        return true; //TODO UNDO
         var email=response.trim();
         var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
         var valid_email = re.test(email);
@@ -284,40 +289,72 @@ database.initDatabase(function(){
 
     bot.dialog('/validate-code-dialog', [
         function (session, args) {
+            console.log("Args",args);
             if(args){
-                session.send(session, "Genial, ¡un último paso! Voy a enviarte a "+session.userData.dbUser.email+" un código de seguridad para verificar tu identidad. Cuando lo recibas, vuelve y dime el código aquí:");
+                session.userData.dbUser=args.dbUser;
+                session.userData.codeTimesEntered=args.codeTimesEntered+1;
+                console.log("Code:",session.userData.codeTimesEntered,args.codeTimesEntered,"\n\n");
+                if(args.welcome){
+                    session.send("¡Un último paso! Voy a enviarte a "+session.userData.dbUser.email+" un código de seguridad para verificar tu identidad. Cuando lo recibas, vuelve y dime el código aquí:");
+                }
             }
             // call custom prompt
-            session.beginDialog('/validate-code-prompt', { 
+            /*session.beginDialog('/validate-code-prompt', { 
                 prompt: "Dime el código enviado a tu email", 
                 retryPrompt: "No parece ser el código correcto, revísalo y reintrodúcelo." 
-            });
+            });*/
+            builder.Prompts.text(session, "Dime el código enviado a tu email ("+session.userData.dbUser.validationCode+"):");
         },
         function (session, results) {
             // Check their answer
-            if (results.response) {
+            console.log("Code2!!: ",session.userData,session.userData.codeTimesEntered,"\n\n");
+
+            if(session.userData.dbUser.validationCode==results.response.trim().toLowerCase()){
                 session.send("Gracias por verificar tu identidad. Es importante estar seguros (cool)");
-                session.endDialog();
+                session.userData.dbUser.authorized=true;
+                database.updateUser(session.userData.dbUser, function(){
+                    session.endDialogWithResult({result: {ok: true, dbUser: session.userData.dbUser}});    
+                    //session.endDialog();
+                });
+            }else{
+                session.send("No parece ser el código correcto... revísalo y reintrodúcelo");
+                if(session.userData.codeTimesEntered>=2){
+                    builder.Prompts.confirm(session, "¿El email "+session.userData.dbUser.email+" es correcto?");
+                }else{
+                    session.reset('/validate-code-dialog',{dbUser: session.userData.dbUser, codeTimesEntered: session.userData.codeTimesEntered++});
+                }
+            }
+        },
+        function (session, results) {
+            if (results.response) {
+                session.send("Ok!");
+                session.reset('/validate-code-dialog',{dbUser: session.userData.dbUser, codeTimesEntered: 0});
             } else{
-                session.send("Debes revisar en tu correo para verificar el código que te ha llegado y decírmelo aquí sin espacios y respetando las mayúsculas");
+                //builder.Prompts.text(session, "Debes revisar en tu correo para verificar el código que te ha llegado y decírmelo aquí");
+                session.send("Ok, entonces vamos a reintroducir el email...");
+                delete session.userData.email;
+                delete session.userData.dbUser.email;
+                session.endDialog();
             }
         }
     ]);
 
-    bot.dialog('/validate-code-prompt', builder.DialogAction.validatedPrompt(builder.PromptType.text, function (response) {
-        if(response=="42"){
-            return true;
-        }
-        return false;
-    }));
-
     console.log("=>RoamBot ready!");    
 });
 
-getFirstName=function(userName){
+function getFirstName(userName){
     if(!userName){
         return null;
     }
     var names=userName.split(" ");
     return names[0];
+}
+function generateRandomPass(){
+    var text = "";
+    var possible = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+    for( var i=0; i < 5; i++ )
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    return text;
 }

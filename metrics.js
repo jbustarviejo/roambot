@@ -13,14 +13,18 @@ module.exports = {
 		if(date){
 			var parsedDate=parse.parseDate(date);
 			if(!parsedDate){
-				session.send("Aún no sé interpretar la unidad de tiempo de '%' :(\nTe devuelvo los más actuales", date);
+
+				session.send("Aún no sé interpretar la unidad de tiempo de '%s' :(\nTe devuelvo los más actuales", date);
+				self.getSumOutboundRoamersMetric(session, parsedCountry);
 				//TODO return the newest report
+				return;
 			}
 			//TODO: date intervals
 			//TODO: Display if no data available (out of registered range)
 		}else{
 			//The newest report
 			self.getSumOutboundRoamersMetric(session, parsedCountry);
+			return;
 		}
 	},
 	getSumOutboundRoamersMetric: function(session, country, startDate, endDate){

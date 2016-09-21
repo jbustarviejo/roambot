@@ -129,6 +129,11 @@ database.initDatabase(function(){
             console.log("Model for outbound: ",args);
             var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
             var time = builder.EntityRecognizer.findEntity(args.entities, 'time');
+            if(time){
+                time=time.entity;
+            }else{
+                time=null;
+            }
             if (!country) {
                 builder.Prompts.text(session, "¿De qué país querrías saber el número de roamers?");
             } else {
@@ -141,9 +146,10 @@ database.initDatabase(function(){
                 if(results.time){
                     session.send("Métrica recuperada: #Roamers outbound de %s para %s", results.country, results.time);
                     console.log("Métrica recuperada: #Roamers outbound de %s para %s", results.country, results.time);
+                    metrics.getOutboundRoamers(session, results.country, results.time);
                 }else{
                     session.send("Métrica recuperada: #Roamers outbound de %s (más reciente)", results.country);
-                    metrics.getOutboundRoamers(session, results.country, results.time);   
+                    metrics.getOutboundRoamers(session, results.country);   
                 }
             } else {
                 session.send("Métrica recuperada: #Roamers global");
@@ -153,21 +159,30 @@ database.initDatabase(function(){
 
     dialog.matches('roamersNumberInbound', [
         function (session, args, next) {
-            console.log("Model for inbound:",args);
+            console.log("Model for inbound: ",args);
             var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
+            var time = builder.EntityRecognizer.findEntity(args.entities, 'time');
+            if(time){
+                time=time.entity;
+            }else{
+                time=null;
+            }
             if (!country) {
                 builder.Prompts.text(session, "¿De qué país querrías saber el número de roamers?");
             } else {
-                next({ response: country.entity });
+                next({ country: country.entity, time: time});
             }
         },
         function (session, results) {
-            var time = builder.EntityRecognizer.findEntity(args.entities, 'time');
-            if (results.response) {
-                if(time){
-                    session.send("Métrica recuperada: #Roamers inbound de %s para %s", results.response, time);
+            console.log(results);
+            if (results.country) {
+                if(results.time){
+                    session.send("Métrica recuperada: #Roamers inbound de %s para %s", results.country, results.time);
+                    console.log("Métrica recuperada: #Roamers inbound de %s para %s", results.country, results.time);
+                    metrics.getOutboundRoamers(session, results.country, results.time);
                 }else{
-                    session.send("Métrica recuperada: #Roamers inbound de %s (más reciente)", results.response);
+                    session.send("Métrica recuperada: #Roamers inbound de %s (más reciente)", results.country);
+                    metrics.getOutboundRoamers(session, results.country);   
                 }
             } else {
                 session.send("Métrica recuperada: #Roamers global");
@@ -259,6 +274,7 @@ database.initDatabase(function(){
     ]);
 
     bot.dialog('/validate-email-prompt', builder.DialogAction.validatedPrompt(builder.PromptType.text, function (response) {
+        return true; //TODO UNDO
         var email=response.trim();
         var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
         var valid_email = re.test(email);

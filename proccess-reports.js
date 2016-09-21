@@ -92,25 +92,25 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 					        }
 					        if(reportType=="Inbound"){
 								var cell={
-						        	date: files.dateFromReport(data[0]),
+						        	dataDate: files.dateFromReport(data[0]),
 						        	dataType: reportType,
 						        	subscriberCountryName: data[1],
 						        	subscriberOperatorName: data[2],
 						        	prefix: data[6],
 						        	originOperatorName: data[3],
-						        	sumTransactions: data[4],
-						        	successes: data[5]
+						        	sumTransactions: parseInt(data[4]),
+						        	successes: parseInt(data[5])
 						        }
 						        database.reportsDataInbound.insert(cell);
 					        }else{ //Outbound
 					        	var cell={
-						        	date: files.dateFromReport(data[0]),
+						        	dataDate: files.dateFromReport(data[0]),
 						        	dataType: reportType,
 						        	subscriberOperatorName: data[1],
 						        	originCountry: data[2],
 						        	originOperatorName: data[3],
-						        	sumTransactions: data[4],
-						        	successes: data[5]
+						        	sumTransactions: parseInt(data[4]),
+						        	successes: parseInt(data[5])
 						        }
 						        database.reportsDataOutbound.insert(cell);
 					        }
@@ -125,9 +125,9 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 
 				files.dateFromReport=function(dateStr){
 					var parts = dateStr.split("/");
-					var dt = new Date(parseInt(parts[0], 10),
+					var dt = new Date(Date.UTC(parseInt(parts[0], 10),
 					                  parseInt(parts[1], 10) - 1,
-					                  parseInt(parts[2].substr(0,2), 10));
+					                  parseInt(parts[2].substr(0,2), 10)));
 					return dt;
 				}
 

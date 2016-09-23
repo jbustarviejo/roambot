@@ -2,6 +2,7 @@ var restify = require('restify');
 var builder = require('botbuilder');
 var nodemailer = require('nodemailer');
 var MongoClient = require('mongodb').MongoClient;
+var fs = require('fs');
 
 var metrics = require('./metrics.js');
 
@@ -13,6 +14,7 @@ var database={};
 var production=true;
 var debug=true;
 var serverPort=3978;
+var enableHttps=true;
 
 //Global vars
 var bot;
@@ -67,7 +69,16 @@ console.log("=>RoamBot starting...");
             bot = new builder.UniversalBot(connector);
         }else{
             // Setup Restify Server
-            var server = restify.createServer();
+            if(enableHttps){
+                var server = restify.createServer({
+                  certificate: fs.readFileSync('/home/ubuntu/.ssh/server.crt'),
+                  key: fs.readFileSync('/home/ubuntu/.ssh/server.key'),
+                  name: 'Roambot',
+                });
+            }else{
+                var server = restify.createServer();
+            }
+            
             server.listen(serverPort, function () {
                console.log('%s listening to %s', server.name, server.url); 
             });

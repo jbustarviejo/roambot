@@ -16,7 +16,7 @@ var serverPort=3978;
 
 //Global vars
 var bot;
-var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=6bcb8477-a066-4e21-a15e-864af9bda1b9&subscription-key=57964100a34f4d1aa3c5cd619690f610&q=');
+var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=d501ee34-9ae0-4d74-a9f3-60f41f99a4e5&subscription-key=57964100a34f4d1aa3c5cd619690f610&q=');
 var dialog = new builder.IntentDialog({ recognizers: [recognizer] });
 
 console.log("=>RoamBot starting...");
@@ -119,13 +119,73 @@ function setupDialogs(){
     // Bots Intents dialogs
     //=========================================================
 
-    dialog.matches('hello', [
+    dialog.matches('roamersNumber', [
         function (session, args, next) {
-            console.log(session);
-            session.send("(wave)");
-            session.endDialog();
+            var toReply="Vale, te digo lo que he pillado: \nMétrica #roamers: ";
+            console
+            if(args.entities){
+                for(var i=0;i<args.entities.length;i++){
+                    switch(args.entities[i].type){
+                        case "originCountry":
+                            toReply+=". El origen es "+args.entities[i].entity;
+                        break;
+                        case "destinationCountry":
+                            toReply+=". El destino es "+args.entities[i].entity;
+                        break;
+                        case "originSubscriber":
+                            toReply+=". El susbcriber origen es "+args.entities[i].entity;
+                        break;
+                        case "destinationSubscriber":
+                            toReply+=" .El susbcriber destino es "+args.entities[i].entity;
+                        break;
+                        case "originSubscriberAndCountry":
+                            toReply+=" .El susbcriber completo de origen es "+args.entities[i].entity;
+                        break;
+                        case "destinationSubscriberAndCountry":
+                            toReply+=" .El susbcriber completo de destino es "+args.entities[i].entity;
+                        break;
+                        case "country":
+                            toReply+=". País "+args.entities[i].entity;
+                        break;
+                        case "time":
+                            toReply+=". Unidad de tiempo "+args.entities[i].entity;
+                        break;
+                        case "subscriber":
+                            toReply+=". Operadora "+args.entities[i].entity;
+                        break;
+                        case "direction":
+                            toReply+=". Dirección "+args.entities[i].entity;
+                        break;
+                    }
+                }
+            }
+            console.log(args);
+            session.send(toReply); 
         }
     ]);
+
+    dialog.matches('roamersStatsNotEnoughData', [
+        function (session, args, next) {
+            var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
+            var time = builder.EntityRecognizer.findEntity(args.entities, 'time');
+
+            var toReply="Vale, te digo lo que he pillado: \n-Métrica de roamers sin muchos datos (no sé algún dato fundamental para entenderlo). "+JSON.stringify(args);
+            console.log(args);
+            session.send(toReply); 
+        }
+    ]);
+
+
+    /*
+ =>Número de roamers: 
+    Por hora, día, comparado con ayer o el mismo dia de la semana anterior
+    tanto in como out
+    por remote partner
+    por pais
+
+    Cuántos roamers habían de Perú el 16-sept a las 18 registrados en Orange España
+
+    */
 
     //=========================================================
     // Bots Defaults
@@ -152,23 +212,25 @@ function setupDialogs(){
         });
     });
 
-    dialog.onDefault(builder.DialogAction.beginDialog('/dont-understand'));
+    //dialog.onDefault(builder.DialogAction.beginDialog('/dont-understand'));
+    dialog.onDefault(builder.DialogAction.send('Esta no la entendí nada...'));
 
     bot.dialog('/dont-understand', [
         function (session, args, next) {
-            session.send("No te he entendido bien, estoy aún aprendiendo a hablar y me cuesta un poco :(");
-            builder.Prompts.choice(session, "¿Cómo puedo ayudarte?", "Estadísticas outbound|Estadísticas inbound");
+            console.log(session,args);
+            session.send("No estoy seguro de la estadística que quieres, estoy aún aprendiendo a hablar y me cuesta un poco :(");
+            builder.Prompts.choice(session, "¿Cómo puedo ayudarte?", "Número de roamers outbound|Número de roamers inbound");
         },
         function (session, result, next) {
             console.log(result);
             if (result.response) {
                 switch(result.response.entity){
-                    case "Estadísticas outbound":
+                    case "Número de roamers outbound":
                     case 1:
                         session.send("La funcionalidad de outbound está pendiente... (tumbleweed)"); //TODO
                         session.endDialog();
                     break;
-                    case "Estadísticas inbound":
+                    case "Número de roamers inbound":
                     case 2:
                         session.send("La funcionalidad de inbound pendiente... (tumbleweed)"); //TODO
                         session.endDialog();
@@ -240,7 +302,8 @@ function setupDialogs(){
             database.getUser(session.message.user.id, function(dbUser){
                 session.userData.dbUser=dbUser;
                 if(session.userData.dbUser.authorized===true){
-                    session.send("¡Genial! El administrador te ha dado de alta en el sistema y ya puedes empezar a utilizar mis servicios. Simplemente pregúntame por alguna estadística, de manera natural como _'Oye Roambot, dime el número de roamers en Perú'_");
+                    //session.send("¡Genial! El administrador te ha dado de alta en el sistema y ya puedes empezar a utilizar mis servicios. Simplemente pregúntame por alguna estadística, de manera natural como _'Oye Roambot, dime el número de roamers en Perú de ayer'_");
+                    session.send("¡Genial! El administrador te ha dado de alta en el sistema ¡Ahora me toca entrenar! Simplemente pregúntame por alguna estadística, de manera natural como _'Oye Roambot, dime el número de roamers en Perú de ayer'_");
                     session.endDialog();
                 }else{
                     if(!args || !args.mute){

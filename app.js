@@ -12,10 +12,10 @@ var parse = require('./parse.js');
 //=========================================================
 
 var database={};
-var production=true;
+var production=false;
 var debug=true;
 var serverPort=3978;
-var enableHttps=true;
+var enableHttps=false;
 
 //Global vars
 var bot;
@@ -159,7 +159,7 @@ function setupDialogs(){
                         country=luisUtil.getElementInSentence(origin, countryList);
 
                         if(country){
-                            toReply+=" país "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"''],";
+                            toReply+=" país "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"'],";
                         }else{
                             toReply+=" no sé el país,";
                         } 
@@ -179,7 +179,7 @@ function setupDialogs(){
 
                         toReply+=" Destino: ";
                         if(country){
-                            toReply+=" país "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"''],";
+                            toReply+=" país "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"'],";
                         }else{
                             toReply+=" no sé el país,";
                         } 
@@ -204,7 +204,7 @@ function setupDialogs(){
                         country=luisUtil.getElementInSentence(origin, countryList);
 
                         if(country){
-                            toReply+=" país origen "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"''],";
+                            toReply+=" país origen "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"'],";
                         }else{
                             toReply+=" no sé el país origen,";
                         } 
@@ -226,7 +226,7 @@ function setupDialogs(){
                         country=luisUtil.getElementInSentence(destination, countryList);
 
                         if(country){
-                            toReply+=" país destino "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"''],";
+                            toReply+=" país destino "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"'],";
                         }else{
                             toReply+=" no sé el país destino,";
                         } 
@@ -631,11 +631,27 @@ var luisUtil={
         return null;
     },
     parseCountry: function(sentence, returnString){
-        var country = builder.EntityRecognizer.findBestMatch(parse.countryList, sentence);
-        if(country && country.entity){
-            return country.entity;
+        var countryEN = builder.EntityRecognizer.findBestMatch(parse.countryListEN, sentence);
+        var countryES = builder.EntityRecognizer.findBestMatch(parse.countryListES, sentence);
+        if(countryEN && countryEN.entity && countryES && countryES.entity ){
+            //Both equivalences
+            if(countryES.score>countryEN.score){
+                //Better in Spanish
+                return countryES.entity;
+            }else{
+                //Better in English, return in Spanish
+                return countryListES[countryListEN.indexOf(countryEN.entity)]
+            }
         }else{
-            return (returnString ? 'no reconocido': null);
+            if(countryES && countryES.entity){
+                //Better in Spanish
+                return countryES.entity;
+            }else if(countryEN && countryEN.entity ){
+                //Better in English, return in Spanish
+                return countryListES[countryListEN.indexOf(countryEN.entity)]
+            }else{
+                return returnString?"-no sé cuál-":null;
+            }
         }
     }
 };

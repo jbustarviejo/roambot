@@ -5,6 +5,7 @@ var MongoClient = require('mongodb').MongoClient;
 var fs = require('fs');
 
 var metrics = require('./metrics.js');
+var parse = require('./parse.js');
 
 //=========================================================
 // Bot Setup
@@ -132,43 +133,133 @@ function setupDialogs(){
 
     dialog.matches('roamersNumber', [
         function (session, args, next) {
-            var toReply="Vale, te digo lo que he pillado: \nMétrica #roamers: ";
+            var toReply="Vale, te digo lo que he pillado... Métrica #roamers.";
             console
             if(args.entities){
-                for(var i=0;i<args.entities.length;i++){
-                    switch(args.entities[i].type){
-                        case "originCountry":
-                            toReply+=". El origen es "+args.entities[i].entity;
-                        break;
-                        case "destinationCountry":
-                            toReply+=". El destino es "+args.entities[i].entity;
-                        break;
-                        case "originSubscriber":
-                            toReply+=". El susbcriber origen es "+args.entities[i].entity;
-                        break;
-                        case "destinationSubscriber":
-                            toReply+=" .El susbcriber destino es "+args.entities[i].entity;
-                        break;
-                        case "originSubscriberAndCountry":
-                            toReply+=" .El susbcriber completo de origen es "+args.entities[i].entity;
-                        break;
-                        case "destinationSubscriberAndCountry":
-                            toReply+=" .El susbcriber completo de destino es "+args.entities[i].entity;
-                        break;
-                        case "country":
-                            toReply+=". País "+args.entities[i].entity;
-                        break;
-                        case "time":
-                            toReply+=". Unidad de tiempo "+args.entities[i].entity;
-                        break;
-                        case "subscriber":
-                            toReply+=". Operadora "+args.entities[i].entity;
-                        break;
-                        case "direction":
-                            toReply+=". Dirección "+args.entities[i].entity;
-                        break;
+
+                var direction = builder.EntityRecognizer.findEntity(args.entities, 'direction');
+
+                var countryList = builder.EntityRecognizer.findAllEntities(args.entities, 'country');
+                var subscriberList = builder.EntityRecognizer.findAllEntities(args.entities, 'subscriber');
+
+                var origin = builder.EntityRecognizer.findEntity(args.entities, 'origin');
+                var destination = builder.EntityRecognizer.findEntity(args.entities, 'destination');
+
+                var timeList = builder.EntityRecognizer.findAllEntities(args.entities, 'time');
+                var dateIntervalStart = builder.EntityRecognizer.findEntity(args.entities, 'time::dateIntervalStart');
+                var dateIntervalEnd = builder.EntityRecognizer.findEntity(args.entities, 'time::dateIntervalEnd');
+                var puntualDate = builder.EntityRecognizer.findEntity(args.entities, 'time::puntualDate');
+                
+                if(direction){
+                    //If direction
+                    if(origin){
+
+                        toReply+=" Origen: ";
+
+                        country=luisUtil.getElementInSentence(origin, countryList);
+
+                        if(country){
+                            toReply+=" país "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"''],";
+                        }else{
+                            toReply+=" no sé el país,";
+                        } 
+
+                        subscriber=luisUtil.getElementInSentence(origin, subscriberList);
+
+                        if(subscriber){
+                            toReply+=" operadora "+subscriber.entity+ ",";
+                        }else{
+                            toReply+=" no sé la operadora,";
+                        }
+                        toReply+=" en dirección "+direction.entity;
+
+                    }else if(destination){
+
+                        country=luisUtil.getElementInSentence(destination, countryList);
+
+                        toReply+=" Destino: ";
+                        if(country){
+                            toReply+=" país "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"''],";
+                        }else{
+                            toReply+=" no sé el país,";
+                        } 
+
+                        subscriber=luisUtil.getElementInSentence(destination, subscriberList);
+
+                        if(subscriber){
+                            toReply+=" operadora "+subscriber.entity+ ",";
+                        }else{
+                            toReply+=" no sé la operadora,";
+                        }
+                        toReply+=" en dirección "+direction.entity;
+                        
+                    }else{
+                        toReply+=" Dirección "+direction.entity+", pero no sé el país ni la operadora.";
+                    }
+                }else{
+                    //No direction
+                    if(origin){
+                        toReply+=" Origen: ";
+
+                        country=luisUtil.getElementInSentence(origin, countryList);
+
+                        if(country){
+                            toReply+=" país origen "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"''],";
+                        }else{
+                            toReply+=" no sé el país origen,";
+                        } 
+
+                        subscriber=luisUtil.getElementInSentence(origin, subscriberList);
+
+                        if(subscriber){
+                            toReply+=" operadora origen "+subscriber.entity+".";
+                        }else{
+                            toReply+=" pero no sé qué operadora origen.";
+                        }
+                    }else{
+                        toReply+=" No sé el país ni la operadora origen.";
+                    }
+
+                    if(destination){
+                        toReply+=" Destino: ";
+
+                        country=luisUtil.getElementInSentence(destination, countryList);
+
+                        if(country){
+                            toReply+=" país destino "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"''],";
+                        }else{
+                            toReply+=" no sé el país destino,";
+                        } 
+
+                        subscriber=luisUtil.getElementInSentence(destination, subscriberList);
+
+                        if(subscriber){
+                            toReply+=" operadora destino "+subscriber.entity+".";
+                        }else{
+                            toReply+=" pero no sé qué operadora destino.";
+                        }
+                    }else{
+                        toReply+=" No sé el país ni la operadora destino.";
                     }
                 }
+
+                //Dates - time
+                if(puntualDate){
+                    toReply+=" El tiempo es '"+puntualDate.entity+"'";
+                }else{
+                    if(dateIntervalStart){
+                        if(dateIntervalEnd){
+                            toReply+=" El tiempo es 'Desde "+dateIntervalEnd.entity+"', Hasta "+dateIntervalEnd.entity+"'.";
+                        }else{
+                            toReply+=" El tiempo es 'Desde "+dateIntervalEnd.entity+"', pero no sé 'hasta cuándo', daría los datos hasta hoy.";
+                        }
+                    }else if(dateIntervalEnd){
+                        toReply+=" El tiempo es 'Hasta "+dateIntervalEnd.entity+"', pero no sé 'desde cuándo.'";
+                    }else{
+                        toReply+=" No sé la unidad de tiempo, daría los de las últimas 24hrs.";
+                    }
+                }
+
             }
             console.log(args);
             session.send(toReply); 
@@ -443,6 +534,69 @@ function setupDialogs(){
         }
     ]);
     }*/
+
+    /*
+if(direction){
+                    //If direction
+                    if(originCountry){
+                        if(originSubscriber){
+                            toReply+=" País "+originCountry.entity+ ", operadora "+originSubscriber.entity+" en dirección "+direction.entity;
+                        }else if(destinationSubscriber){
+                            toReply+=" País "+originCountry.entity+ ", operadora "+destinationSubscriber.entity+" en dirección "+direction.entity;
+                        }else{
+                            toReply+=" País "+originCountry.entity+ ", pero no sé qué operadora, en dirección "+direction.entity;
+                        }
+                    }else if(destinationCountry){
+                        if(destinationSubscriber){
+                            toReply+=" País "+destinationCountry.entity+ ", operadora "+destinationSubscriber.entity+" en dirección "+direction.entity;
+                        }else if(originSubscriber){
+                            toReply+=" País "+destinationCountry.entity+ ", operadora "+originSubscriber.entity+" en dirección "+direction.entity;
+                        }else{
+                            toReply+=" País "+destinationCountry.entity+ ", pero no sé qué operadora, en dirección "+direction.entity;
+                        }
+                    }else{
+                        toReply+=" Dirección "+direction.entity+", pero no sé el país ni la operadora.";
+                    }
+                }else{
+                    //No direction
+                    if(originCountry){
+                        if(originSubscriber){
+                            toReply+=" País de origen "+originCountry.entity+ ", operadora "+originSubscriber.entity+".";
+                        }else{
+                            toReply+=" País de origen "+originCountry.entity+ ", pero no sé qué operadora.";
+                        }
+                    }else{
+                        toReply+=" No sé el país de origen ni la operadora.";
+                    }
+                    if(destinationCountry){
+                        if(destinationSubscriber){
+                            toReply+=" País de destino "+destinationCountry.entity+ ", operadora "+destinationSubscriber.entity+".";
+                        }else{
+                            toReply+=" País de destino "+destinationCountry.entity+ ", pero no sé qué operadora.";
+                        }
+                    }
+                }
+                //Dates
+                if(puntualDate){
+                    toReply+=" El tiempo es '"+puntualDate.entity+"'";
+                }else{
+                    if(dateIntervalStart){
+                        if(dateIntervalEnd){
+                            toReply+=" El tiempo es 'Desde "+dateIntervalEnd.entity+"', Hasta "+dateIntervalEnd.entity+"'.";
+                        }else{
+                            toReply+=" El tiempo es 'Desde "+dateIntervalEnd.entity+"', pero no sé 'hasta cuándo', daría los datos hasta hoy.";
+                        }
+                    }else if(dateIntervalEnd){
+                        toReply+=" El tiempo es 'Hasta "+dateIntervalEnd.entity+"', pero no sé 'desde cuándo.'";
+                    }else{
+                        if(time){
+                            toReply+=" Unidad de tiempo: '"+time+"'.";
+                        }else{
+                            toReply+=" No sé la unidad de tiempo, daría los de las últimas 24hrs.";
+                        }
+                    }
+                }
+    */
 }
 
 var util={
@@ -464,5 +618,24 @@ var util={
             return -2;
         }
         return 1;
+    }
+};
+
+var luisUtil={
+    getElementInSentence: function(sentente, elementList){
+        for(var i=0; i<elementList.length; i++){
+            if(elementList[i].startIndex>=sentente.startIndex && elementList[i].endIndex<=sentente.endIndex){
+                return elementList[i];
+            }
+        }
+        return null;
+    },
+    parseCountry: function(sentence, returnString){
+        var country = builder.EntityRecognizer.findBestMatch(parse.countryList, sentence);
+        if(country && country.entity){
+            return country.entity;
+        }else{
+            return (returnString ? 'no reconocido': null);
+        }
     }
 };

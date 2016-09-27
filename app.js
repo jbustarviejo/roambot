@@ -96,7 +96,7 @@ console.log("=>RoamBot starting...");
 
         setupDialogs();
 
-        console.log("=>RoamBot ready!");  
+        console.log("=>RoamBot ready!");
     });
         
 })();
@@ -167,7 +167,7 @@ function setupDialogs(){
                         subscriber=luisUtil.getElementInSentence(origin, subscriberList);
 
                         if(subscriber){
-                            toReply+=" operadora "+subscriber.entity+ ",";
+                            toReply+=" operadora "+luisUtil.parseOperator(subscriber.entity,true)+" ['"+subscriber.entity+"'],";
                         }else{
                             toReply+=" no sé la operadora,";
                         }
@@ -187,7 +187,7 @@ function setupDialogs(){
                         subscriber=luisUtil.getElementInSentence(destination, subscriberList);
 
                         if(subscriber){
-                            toReply+=" operadora "+subscriber.entity+ ",";
+                            toReply+=" operadora "+luisUtil.parseOperator(subscriber.entity,true)+" ['"+subscriber.entity+"'],";
                         }else{
                             toReply+=" no sé la operadora,";
                         }
@@ -204,20 +204,20 @@ function setupDialogs(){
                         country=luisUtil.getElementInSentence(origin, countryList);
 
                         if(country){
-                            toReply+=" país origen "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"'],";
+                            toReply+=" país "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"'],";
                         }else{
-                            toReply+=" no sé el país origen,";
+                            toReply+=" no sé el país,";
                         } 
 
                         subscriber=luisUtil.getElementInSentence(origin, subscriberList);
 
                         if(subscriber){
-                            toReply+=" operadora origen "+subscriber.entity+".";
+                            toReply+=" operadora "+luisUtil.parseOperator(subscriber.entity,true)+" ['"+subscriber.entity+"'],";
                         }else{
-                            toReply+=" pero no sé qué operadora origen.";
+                            toReply+=" no sé qué operadora.";
                         }
                     }else{
-                        toReply+=" No sé el país ni la operadora origen.";
+                        toReply+=" No sé el país ni la operadora.";
                     }
 
                     if(destination){
@@ -226,20 +226,20 @@ function setupDialogs(){
                         country=luisUtil.getElementInSentence(destination, countryList);
 
                         if(country){
-                            toReply+=" país destino "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"'],";
+                            toReply+=" país "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"'],";
                         }else{
-                            toReply+=" no sé el país destino,";
+                            toReply+=" no sé el país,";
                         } 
 
                         subscriber=luisUtil.getElementInSentence(destination, subscriberList);
 
                         if(subscriber){
-                            toReply+=" operadora destino "+subscriber.entity+".";
+                            toReply+=" operadora "+luisUtil.parseOperator(subscriber.entity,true)+" ['"+subscriber.entity+"'],";
                         }else{
-                            toReply+=" pero no sé qué operadora destino.";
+                            toReply+=" no sé qué operadora.";
                         }
                     }else{
-                        toReply+=" No sé el país ni la operadora destino.";
+                        toReply+=" No sé el país ni la operadora.";
                     }
                 }
 
@@ -614,7 +614,7 @@ var util={
         if(!validEmail){
             return -1;
         }
-        if(!email.endsWith("telefonica.es")){
+        if(!email.endsWith("telefonica.es")||!email.endsWith("telefonica.com")){
             return -2;
         }
         return 1;
@@ -631,24 +631,47 @@ var luisUtil={
         return null;
     },
     parseCountry: function(sentence, returnString){
-        var countryEN = builder.EntityRecognizer.findBestMatch(parse.countryListEN, sentence);
-        var countryES = builder.EntityRecognizer.findBestMatch(parse.countryListES, sentence);
-        if(countryEN && countryEN.entity && countryES && countryES.entity ){
+        var countryEN = builder.EntityRecognizer.findBestMatch(parse.countryListEN, sentence,0.01);
+        var countryES = builder.EntityRecognizer.findBestMatch(parse.countryListES, sentence,0.01);
+        var countryCode = builder.EntityRecognizer.findBestMatch(parse.countryCodes, sentence,0.01);
+
+        console.log("Country recognition ES: ",countryES,"\nCountryEN:",countryEN,"\nCCountry code:",countryCode);
+
+        if(countryES && countryES.score && countryES.score >= countryEN.score && countryES.score >= countryCode.score){
+            return countryES.entity;
+        }
+
+        if(countryEN && countryEN.score && countryEN.score >= countryCode.score){
+            return parse.countryListES[countryEN.index];
+        }
+
+        if(countryCode && countryCode.score){
+            return parse.countryListES[parse.countryListEN.indexOf(parse.countryCodesEquivalency[countryCode.index])];
+        }
+
+        return returnString ? "-no sé cuál-" : null;
+
+    },
+    parseOperator: function(sentence, returnString){
+        var subscribersGeneral = builder.EntityRecognizer.findBestMatch(parse.subscribersGeneral, sentence,0.01);
+        var subscribersConcrete = builder.EntityRecognizer.findBestMatch(parse.subscribersConcrete, sentence,0.01);
+        console.log("Subscriber recognition concrete: ",subscribersConcrete,"\nGeneral:",subscribersGeneral);
+        if(subscribersConcrete && subscribersConcrete.entity && subscribersGeneral && subscribersGeneral.entity ){
             //Both equivalences
-            if(countryES.score>countryEN.score){
-                //Better in Spanish
-                return countryES.entity;
+            if(subscribersGeneral.score>=subscribersConcrete.score){
+                //Better in concrete
+                return subscribersGeneral.entity;
             }else{
-                //Better in English, return in Spanish
-                return countryListES[countryListEN.indexOf(countryEN.entity)]
+                //Better in concrete, return in general
+                return parse.subscribersGeneral[subscribersConcrete.index]
             }
         }else{
-            if(countryES && countryES.entity){
-                //Better in Spanish
-                return countryES.entity;
-            }else if(countryEN && countryEN.entity ){
-                //Better in English, return in Spanish
-                return countryListES[countryListEN.indexOf(countryEN.entity)]
+            if(subscribersGeneral && subscribersGeneral.entity){
+                //Better in general
+                return subscribersGeneral.entity;
+            }else if(subscribersConcrete && subscribersConcrete.entity ){
+                //Better in concrete, return in general
+                return parse.subscribersGeneral[subscribersConcrete.index]
             }else{
                 return returnString?"-no sé cuál-":null;
             }

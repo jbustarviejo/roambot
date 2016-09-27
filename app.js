@@ -3,6 +3,7 @@ var builder = require('botbuilder');
 var nodemailer = require('nodemailer');
 var MongoClient = require('mongodb').MongoClient;
 var fs = require('fs');
+var os = require('os');
 
 var metrics = require('./metrics.js');
 var parse = require('./parse.js');
@@ -12,7 +13,7 @@ var parse = require('./parse.js');
 //=========================================================
 
 var database={};
-var production=false;
+var production=true;
 var debug=true;
 var serverPort=3978;
 var enableHttps=false;
@@ -63,6 +64,10 @@ console.log("=>RoamBot starting...");
             );
         };
 
+        if(os.hostname()=="MacBook-de-jbustarviejogmailcom.local"){
+            production=false;
+            enableHttps=false;
+        }
 
         metrics.database=database;
         if(!production){
@@ -149,8 +154,14 @@ function setupDialogs(){
                 var dateIntervalStart = builder.EntityRecognizer.findEntity(args.entities, 'time::dateIntervalStart');
                 var dateIntervalEnd = builder.EntityRecognizer.findEntity(args.entities, 'time::dateIntervalEnd');
                 var puntualDate = builder.EntityRecognizer.findEntity(args.entities, 'time::puntualDate');
-                
+
+                var knowData={};
+
                 if(direction){
+                    var parsedDirection = luisUtil.parseDirection(direction.entity);
+                }
+                
+                if(parsedDirection){
                     //If direction
                     if(origin){
 
@@ -159,7 +170,11 @@ function setupDialogs(){
                         country=luisUtil.getElementInSentence(origin, countryList);
 
                         if(country){
-                            toReply+=" país "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"'],";
+                            var parsedCountry=luisUtil.parseCountry(country.entity);
+                            toReply+=" país "+parsedCountry+" ['"+country.entity+"'],";
+                            if(parsedCountry){
+                                knowData.originCountry=parsedCountry;
+                            }
                         }else{
                             toReply+=" no sé el país,";
                         } 
@@ -167,11 +182,17 @@ function setupDialogs(){
                         subscriber=luisUtil.getElementInSentence(origin, subscriberList);
 
                         if(subscriber){
-                            toReply+=" operadora "+luisUtil.parseOperator(subscriber.entity,true)+" ['"+subscriber.entity+"'],";
+                            var parsedSubscriber=luisUtil.parseSubscriber(subscriber.entity);
+                            toReply+=" operadora "+parsedSubscriber+" ['"+subscriber.entity+"'],";
+                            if(parsedCountry){
+                                knowData.originSubscriber=parsedSubscriber;
+                            }
                         }else{
                             toReply+=" no sé la operadora,";
                         }
+
                         toReply+=" en dirección "+direction.entity;
+                        knowData.direction=parsedDirection;
 
                     }else if(destination){
 
@@ -179,7 +200,11 @@ function setupDialogs(){
 
                         toReply+=" Destino: ";
                         if(country){
-                            toReply+=" país "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"'],";
+                            var parsedCountry=luisUtil.parseCountry(country.entity);
+                            toReply+=" país "+parsedCountry+" ['"+country.entity+"'],";
+                            if(parsedCountry){
+                                knowData.originCountry=parsedCountry;
+                            }
                         }else{
                             toReply+=" no sé el país,";
                         } 
@@ -187,14 +212,20 @@ function setupDialogs(){
                         subscriber=luisUtil.getElementInSentence(destination, subscriberList);
 
                         if(subscriber){
-                            toReply+=" operadora "+luisUtil.parseOperator(subscriber.entity,true)+" ['"+subscriber.entity+"'],";
+                            var parsedSubscriber=luisUtil.parseSubscriber(subscriber.entity);
+                            toReply+=" operadora "+parsedSubscriber+" ['"+subscriber.entity+"'],";
+                            if(parsedCountry){
+                                knowData.originSubscriber=parsedSubscriber;
+                            }
                         }else{
                             toReply+=" no sé la operadora,";
                         }
+
                         toReply+=" en dirección "+direction.entity;
+                        knowData.direction=parsedDirection;
                         
                     }else{
-                        toReply+=" Dirección "+direction.entity+", pero no sé el país ni la operadora.";
+                        toReply+=" Dirección "+parsedDirection+", pero no sé el país ni la operadora.";
                     }
                 }else{
                     //No direction
@@ -204,7 +235,11 @@ function setupDialogs(){
                         country=luisUtil.getElementInSentence(origin, countryList);
 
                         if(country){
-                            toReply+=" país "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"'],";
+                            var parsedCountry=luisUtil.parseCountry(country.entity);
+                            toReply+=" país "+parsedCountry+" ['"+country.entity+"'],";
+                            if(parsedCountry){
+                                knowData.originCountry=parsedCountry;
+                            }
                         }else{
                             toReply+=" no sé el país,";
                         } 
@@ -212,7 +247,11 @@ function setupDialogs(){
                         subscriber=luisUtil.getElementInSentence(origin, subscriberList);
 
                         if(subscriber){
-                            toReply+=" operadora "+luisUtil.parseOperator(subscriber.entity,true)+" ['"+subscriber.entity+"'],";
+                            var parsedSubscriber=luisUtil.parseSubscriber(subscriber.entity);
+                            toReply+=" operadora "+parsedSubscriber+" ['"+subscriber.entity+"'],";
+                            if(parsedCountry){
+                                knowData.originSubscriber=parsedSubscriber;
+                            }
                         }else{
                             toReply+=" no sé qué operadora.";
                         }
@@ -226,7 +265,11 @@ function setupDialogs(){
                         country=luisUtil.getElementInSentence(destination, countryList);
 
                         if(country){
-                            toReply+=" país "+luisUtil.parseCountry(country.entity,true)+" ['"+country.entity+"'],";
+                            var parsedCountry=luisUtil.parseCountry(country.entity);
+                            toReply+=" país "+parsedCountry+" ['"+country.entity+"'],";
+                            if(parsedCountry){
+                                knowData.destinationCountry=parsedCountry;
+                            }
                         }else{
                             toReply+=" no sé el país,";
                         } 
@@ -234,7 +277,11 @@ function setupDialogs(){
                         subscriber=luisUtil.getElementInSentence(destination, subscriberList);
 
                         if(subscriber){
-                            toReply+=" operadora "+luisUtil.parseOperator(subscriber.entity,true)+" ['"+subscriber.entity+"'],";
+                            var parsedSubscriber=luisUtil.parseSubscriber(subscriber.entity);
+                            toReply+=" operadora "+parsedSubscriber+" ['"+subscriber.entity+"'],";
+                            if(parsedCountry){
+                                knowData.destinationSubscriber=parsedSubscriber;
+                            }
                         }else{
                             toReply+=" no sé qué operadora.";
                         }
@@ -246,19 +293,25 @@ function setupDialogs(){
                 //Dates - time
                 if(puntualDate){
                     toReply+=" El tiempo es '"+puntualDate.entity+"'";
+                    knowData.puntualDate=puntualDate.entity;
                 }else{
                     if(dateIntervalStart){
+                        knowData.dateIntervalStart=dateIntervalStart.entity;
                         if(dateIntervalEnd){
-                            toReply+=" El tiempo es 'Desde "+dateIntervalEnd.entity+"', Hasta "+dateIntervalEnd.entity+"'.";
+                            toReply+=" El tiempo es 'Desde "+dateIntervalStart.entity+"', Hasta "+dateIntervalEnd.entity+"'.";
+                            knowData.dateIntervalEnd=dateIntervalEnd.entity;
                         }else{
-                            toReply+=" El tiempo es 'Desde "+dateIntervalEnd.entity+"', pero no sé 'hasta cuándo', daría los datos hasta hoy.";
+                            toReply+=" El tiempo es 'Desde "+dateIntervalStart.entity+"', pero no sé 'hasta cuándo', daría los datos hasta hoy.";
                         }
                     }else if(dateIntervalEnd){
+                        knowData.dateIntervalEnd=dateIntervalEnd.entity;
                         toReply+=" El tiempo es 'Hasta "+dateIntervalEnd.entity+"', pero no sé 'desde cuándo.'";
                     }else{
                         toReply+=" No sé la unidad de tiempo, daría los de las últimas 24hrs.";
                     }
                 }
+
+                session.beginDialog('/get-roamers-number-data',knowData);
 
             }
             console.log(args);
@@ -351,6 +404,35 @@ function setupDialogs(){
     //=========================================================
     // Bots Dialogs
     //=========================================================
+
+    bot.dialog('/get-roamers-number-data', [
+        function (session, args, next) {
+            console.log("=>Received args",args,args.originCountry,args.originSubscriber);
+            if(args.direction){
+                metrics.getRoamersByDirection(session, args.direction, args.originCountry, args.originSubscriber);
+                if(args.originCountry){
+                    if(args.originSubscriber){
+                        session.send(" ===> #Número de roamers "+args.direction+" de "+args.originCountry+" - "+args.originSubscriber);
+                    }else{
+                        session.send(" ===> #Número de roamers "+args.direction+" de "+args.originCountry+" - xxx ");
+                    }
+                }else{
+                    if(args.originSubscriber){
+                        session.send(" ===> #Número de roamers "+args.direction+" de xxx - "+args.originSubscriber);
+                    }else{
+                        session.send(" ===> #Número de roamers "+args.direction+" de xxx - xxx. Necesario algún dato más para continuar ");
+                    }
+                }
+            }else{
+
+            }
+            session.endDialog();
+        },
+        function (session, result, next) {
+            console.log(result);
+           
+        },
+    ]);
 
     bot.dialog('/get-user-email', [
         function (session, args) {
@@ -466,7 +548,6 @@ function setupDialogs(){
         });
     };
 
-
     /*
     dialog.matches('roamersNumberOutbound', [
         function (session, args, next) {
@@ -534,69 +615,6 @@ function setupDialogs(){
         }
     ]);
     }*/
-
-    /*
-if(direction){
-                    //If direction
-                    if(originCountry){
-                        if(originSubscriber){
-                            toReply+=" País "+originCountry.entity+ ", operadora "+originSubscriber.entity+" en dirección "+direction.entity;
-                        }else if(destinationSubscriber){
-                            toReply+=" País "+originCountry.entity+ ", operadora "+destinationSubscriber.entity+" en dirección "+direction.entity;
-                        }else{
-                            toReply+=" País "+originCountry.entity+ ", pero no sé qué operadora, en dirección "+direction.entity;
-                        }
-                    }else if(destinationCountry){
-                        if(destinationSubscriber){
-                            toReply+=" País "+destinationCountry.entity+ ", operadora "+destinationSubscriber.entity+" en dirección "+direction.entity;
-                        }else if(originSubscriber){
-                            toReply+=" País "+destinationCountry.entity+ ", operadora "+originSubscriber.entity+" en dirección "+direction.entity;
-                        }else{
-                            toReply+=" País "+destinationCountry.entity+ ", pero no sé qué operadora, en dirección "+direction.entity;
-                        }
-                    }else{
-                        toReply+=" Dirección "+direction.entity+", pero no sé el país ni la operadora.";
-                    }
-                }else{
-                    //No direction
-                    if(originCountry){
-                        if(originSubscriber){
-                            toReply+=" País de origen "+originCountry.entity+ ", operadora "+originSubscriber.entity+".";
-                        }else{
-                            toReply+=" País de origen "+originCountry.entity+ ", pero no sé qué operadora.";
-                        }
-                    }else{
-                        toReply+=" No sé el país de origen ni la operadora.";
-                    }
-                    if(destinationCountry){
-                        if(destinationSubscriber){
-                            toReply+=" País de destino "+destinationCountry.entity+ ", operadora "+destinationSubscriber.entity+".";
-                        }else{
-                            toReply+=" País de destino "+destinationCountry.entity+ ", pero no sé qué operadora.";
-                        }
-                    }
-                }
-                //Dates
-                if(puntualDate){
-                    toReply+=" El tiempo es '"+puntualDate.entity+"'";
-                }else{
-                    if(dateIntervalStart){
-                        if(dateIntervalEnd){
-                            toReply+=" El tiempo es 'Desde "+dateIntervalEnd.entity+"', Hasta "+dateIntervalEnd.entity+"'.";
-                        }else{
-                            toReply+=" El tiempo es 'Desde "+dateIntervalEnd.entity+"', pero no sé 'hasta cuándo', daría los datos hasta hoy.";
-                        }
-                    }else if(dateIntervalEnd){
-                        toReply+=" El tiempo es 'Hasta "+dateIntervalEnd.entity+"', pero no sé 'desde cuándo.'";
-                    }else{
-                        if(time){
-                            toReply+=" Unidad de tiempo: '"+time+"'.";
-                        }else{
-                            toReply+=" No sé la unidad de tiempo, daría los de las últimas 24hrs.";
-                        }
-                    }
-                }
-    */
 }
 
 var util={
@@ -630,29 +648,36 @@ var luisUtil={
         }
         return null;
     },
-    parseCountry: function(sentence, returnString){
+    parseCountry: function(sentence){
         var countryEN = builder.EntityRecognizer.findBestMatch(parse.countryListEN, sentence,0.01);
         var countryES = builder.EntityRecognizer.findBestMatch(parse.countryListES, sentence,0.01);
         var countryCode = builder.EntityRecognizer.findBestMatch(parse.countryCodes, sentence,0.01);
 
-        console.log("Country recognition ES: ",countryES,"\nCountryEN:",countryEN,"\nCCountry code:",countryCode);
+        var countryENScore = (countryEN && countryEN.score) ? countryEN.score : 0;
+        var countryESScore = (countryES && countryES.score) ? countryES.score : 0;
+        var countryCodeScore = (countryCode && countryCode.score) ? countryCode.score : 0;
 
-        if(countryES && countryES.score && countryES.score >= countryEN.score && countryES.score >= countryCode.score){
-            return countryES.entity;
+        console.log("Country recognition ES: ("+countryESScore+")",countryES,"\nCountryEN: ("+countryENScore+")",countryEN,"\nCCountry code: ("+countryCodeScore+")",countryCode);
+
+        if(countryESScore >= countryENScore && countryESScore >= countryCodeScore){
+            console.log("Returned",parse.countryListEN[countryES.index]);
+            return parse.countryListEN[countryES.index];
         }
 
-        if(countryEN && countryEN.score && countryEN.score >= countryCode.score){
-            return parse.countryListES[countryEN.index];
+        if(countryENScore >= countryCodeScore){
+            console.log("Returned",countryEN.entity);
+            return countryEN.entity;
         }
 
-        if(countryCode && countryCode.score){
-            return parse.countryListES[parse.countryListEN.indexOf(parse.countryCodesEquivalency[countryCode.index])];
+        if(countryCodeScore > 0){
+            console.log("Returned",parse.countryListEN.indexOf(parse.countryCodesEquivalency[countryCode.index]));
+            return parse.countryListEN.indexOf(parse.countryCodesEquivalency[countryCode.index]);
         }
 
-        return returnString ? "-no sé cuál-" : null;
+        return null;
 
     },
-    parseOperator: function(sentence, returnString){
+    parseSubscriber: function(sentence){
         var subscribersGeneral = builder.EntityRecognizer.findBestMatch(parse.subscribersGeneral, sentence,0.01);
         var subscribersConcrete = builder.EntityRecognizer.findBestMatch(parse.subscribersConcrete, sentence,0.01);
         console.log("Subscriber recognition concrete: ",subscribersConcrete,"\nGeneral:",subscribersGeneral);
@@ -660,21 +685,29 @@ var luisUtil={
             //Both equivalences
             if(subscribersGeneral.score>=subscribersConcrete.score){
                 //Better in concrete
-                return subscribersGeneral.entity;
+                return parse.subscribersConcrete[subscribersGeneral.index];
             }else{
                 //Better in concrete, return in general
-                return parse.subscribersGeneral[subscribersConcrete.index]
+                return subscribersConcrete.entity;
             }
         }else{
             if(subscribersGeneral && subscribersGeneral.entity){
                 //Better in general
-                return subscribersGeneral.entity;
+                return parse.subscribersConcrete[subscribersGeneral.index];
             }else if(subscribersConcrete && subscribersConcrete.entity ){
                 //Better in concrete, return in general
-                return parse.subscribersGeneral[subscribersConcrete.index]
+                return subscribersConcrete.entity;
             }else{
-                return returnString?"-no sé cuál-":null;
+                return null;
             }
         }
+    },
+    parseDirection: function(sentence){
+        var parseDirection = builder.EntityRecognizer.findBestMatch(["inbound","outbound","in","out"], sentence);
+        console.log("Direction recognition: ",parseDirection);
+        if(parseDirection && parseDirection.score){
+            return parseDirection.entity;
+        }
+        return null;
     }
 };

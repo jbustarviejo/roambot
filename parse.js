@@ -1846,7 +1846,9 @@ countryCodesEquivalency:[
         'United States of America, USA',
         'United States of America, USA',
         'United Kingdom of Great Britain and Northern Ireland, UK'
-    ]
+    ],
+    directions: ["inbound","outbound","in","out"],
+    directionsEquivalency: ["inbound","outbound","inbound","outbound"],
 }
 
 var defaultDiacriticsRemovalMap = [

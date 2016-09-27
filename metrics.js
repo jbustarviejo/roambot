@@ -4,6 +4,73 @@ var parse = require('./parse.js');
 debug=true;
 
 module.exports = {
+	getRoamersByDirection: function(session, direction, country, subscriber){
+		console.log("Roamres by direction",direction, country, subscriber);
+		var self=this;
+		if(direction=="inbound"){
+			self.getInboundRoamers(session,country,subscriber);
+		}else if(direction=="outbound"){
+			self.getInboundRoamers(session,country,subscriber);
+			//self.getOutboundRoamers(session,country,subscriber);
+		}else{
+			throw Exception("No direction!!");
+		}
+	},
+	getInboundRoamers(session, country, subscriber){
+		var self=this;
+		console.log("Roamres by inbound", country, subscriber);
+		if(country && subscriber){
+			self.database.reportsDataOutbound.find({country: country, originOperatorName: subscriber},{sumTransactions: 1}).toArray(function(err, docs){
+		        if (docs && docs.length>0){
+		            debug && console.log("Outbound data found!...", docs);
+
+		            var totalSumTransactions=0;
+		            for (var i = 0; i < docs.length; i++) {
+		            	totalSumTransactions+=docs[i].sumTransactions;
+		            }
+		            session.send("En total hay %s romeros", totalSumTransactions);
+		            session.endDialog();
+		        }else{
+		            session.send("No tengo datos para esta combinación");
+		            session.endDialog();
+		        }
+		    });
+		}else if(country){
+			self.database.reportsDataOutbound.find({country: country},{sumTransactions: 1}).toArray(function(err, docs){
+		        if (docs && docs.length>0){
+		            debug && console.log("Outbound data found!...", docs);
+
+		            var totalSumTransactions=0;
+		            for (var i = 0; i < docs.length; i++) {
+		            	totalSumTransactions+=docs[i].sumTransactions;
+		            }
+		            session.send("En total hay %s romeros", totalSumTransactions);
+		            session.endDialog();
+		        }else{
+		            session.send("No tengo datos para esta combinación");
+		            session.endDialog();
+		        }
+		    });
+		}else if(subscriber){
+			self.database.reportsDataOutbound.find({originOperatorName: subscriber},{sumTransactions: 1}).toArray(function(err, docs){
+		        if (docs && docs.length>0){
+		            debug && console.log("Outbound data found!...", docs);
+
+		            var totalSumTransactions=0;
+		            for (var i = 0; i < docs.length; i++) {
+		            	totalSumTransactions+=docs[i].sumTransactions;
+		            }
+		            session.send("En total hay %s romeros", totalSumTransactions);
+		            session.endDialog();
+		        }else{
+		            session.send("No tengo datos para esta combinación");
+		            session.endDialog();
+		        }
+		    });
+		}else{
+			throw Exception("No direction!!");
+		}
+	},
 	getOutboundRoamers: function(session, country, date){
 		var self=this;
 		var parsedCountry=parse.parseCountry(country);

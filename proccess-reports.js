@@ -94,9 +94,8 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 								var cell={
 						        	dataDate: files.dateFromReport(data[0]),
 						        	dataType: reportType,
-						        	subscriberCountryName: data[1],
-						        	subscriberOperatorName: data[2],
-						        	prefix: data[6],
+						        	subscriberOperatorName: data[1],
+						        	originCountry: data[2],
 						        	originOperatorName: data[3],
 						        	sumTransactions: parseInt(data[4]),
 						        	successes: parseInt(data[5])
@@ -106,8 +105,9 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 					        	var cell={
 						        	dataDate: files.dateFromReport(data[0]),
 						        	dataType: reportType,
-						        	subscriberOperatorName: data[1],
-						        	originCountry: data[2],
+						        	subscriberCountryName: data[1],
+						        	subscriberOperatorName: data[2],
+						        	prefix: data[6],
 						        	originOperatorName: data[3],
 						        	sumTransactions: parseInt(data[4]),
 						        	successes: parseInt(data[5])

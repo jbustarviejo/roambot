@@ -7,7 +7,7 @@ module.exports = {
 	getRoamersByCountryAllCountries(session, direction){
 		var self=this;
 
-		console.log("Direction for report",direction);
+		console.log("Direction for report",direction,{originCountry: country.equivalency}, {sumTransactions: 1});
 
 		if(direction=="inbound"){
 			self.database.reportsDataInbound.find({},{sumTransactions: 1}).toArray(function(err, docs){
@@ -23,7 +23,7 @@ module.exports = {
 					session.send("En total, el número de roamers de Perú en inbound para todos los países es de %s", self.numberWithDots(sumTransactions));
 	            	session.endDialog();
 		        }else{
-					session.send("No tengo datos de Perú inbound para esta combinación");
+					session.send("No tengo datos de Perú inbound...");
 	            	session.endDialog();
 		        }
 		    });
@@ -41,7 +41,7 @@ module.exports = {
 					session.send("En total, el número de roamers de Perú en outbound para todos los países es de %s", self.numberWithDots(sumTransactions));
 	            	session.endDialog();
 		        }else{
-					session.send("No tengo datos de Perú outbound para esta combinación");
+					session.send("No tengo datos de Perú outbound...");
 	            	session.endDialog();
 		        }
 		    });
@@ -73,7 +73,7 @@ module.exports = {
 					session.send("¡Pst! Un consejo, puedes probar solicitando datos más concretos: 'Dime el Número inbound de roamers de Italia de las últimas 24 horas'");
 	            	session.endDialog();
 		        }else{
-					session.send("No tengo datos de Perú para esta combinación");
+					session.send("No tengo datos de Perú...");
 	            	session.endDialog();
 		        }
 		    });
@@ -116,10 +116,14 @@ module.exports = {
 	getRoamersByCountry(session, country, direction){
 		var self=this;
 
-		console.log("Direction for report",direction);
+		console.log("Direction for report",direction,{originCountry: country.equivalency}, {sumTransactions: 1});
 
 		if(direction=="inbound"){
+			self.database.reportsDataInbound.find().toArray(function(err, docs){
+				console.log(err,docs);
+			});
 			self.database.reportsDataInbound.find({originCountry: country.equivalency}, {sumTransactions: 1}).toArray(function(err, docs){
+				console.log(err,docs);
 				var sumTransactions=0;
 
 		        if (docs && docs.length>0){
@@ -132,7 +136,7 @@ module.exports = {
 					session.send("En total, el número de roamers de Perú en inbound para %s es de %s", country.spanish, self.numberWithDots(sumTransactions));
 	            	session.endDialog();
 		        }else{
-					session.send("No tengo datos de Perú inbound para esta combinación");
+					session.send("No tengo datos de Perú inbound para %s", country.spanish);
 	            	session.endDialog();
 		        }
 		    });
@@ -150,7 +154,7 @@ module.exports = {
 					session.send("En total, el número de roamers de Perú en outbound para %s es de %s", country.spanish, self.numberWithDots(sumTransactions));
 	            	session.endDialog();
 		        }else{
-					session.send("No tengo datos de Perú outbound para esta combinación");
+					session.send("No tengo datos de Perú outbound para %s", country.spanish);
 	            	session.endDialog();
 		        }
 		    });

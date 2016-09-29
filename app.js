@@ -138,6 +138,49 @@ function setupDialogs(){
 
     dialog.matches('roamersNumber', [
         function (session, args, next) {
+            console.log("Detected",args);
+
+            var countryList = builder.EntityRecognizer.findAllEntities(args.entities, 'country');
+            var direction = builder.EntityRecognizer.findEntity(args.entities, 'direction');
+
+            for(var i=0;i<countryList.length;i++){
+                countryList[i].equivalency=null;
+                if(countryList[i].entity){
+                    countryList[i].equivalency=luisUtil.parseCountry(countryList[i].entity);
+                }
+            }
+            if(direction && direction.entity){
+                var directionParsed = luisUtil.parseDirection(direction.entity);
+            }else{
+                var directionParsed = null;
+            }
+            console.log("Country List",countryList);
+            next({countryList: countryList, direction: directionParsed});
+        },
+        function (session, result, next) {
+            //1 country
+            console.log(result.countryList[0]);
+
+            if(result.countryList[0] && result.countryList[0].equivalency && result.countryList[0].equivalency.equivalency){
+                entity=result.countryList[0].equivalency;
+                if(result.direction && result.direction.equivalency){
+                    metrics.getRoamersByCountry(session, entity, result.direction.equivalency);
+                }else{
+                    metrics.getRoamersByCountryBothDirections(session,entity);
+                }
+            }else{
+                if(result.direction && result.direction.equivalency){
+                    metrics.getRoamersByCountryAllCountries(session, result.direction.equivalency);
+                }else{
+                    metrics.getRoamersByCountryBothDirectionsAllCountries(session);
+                }
+            }
+        },
+    ]);
+
+    /*
+    dialog.matches('roamersNumberALLOMG!!, [
+        function (session, args, next) {
             var toReply="Vale, te digo lo que he pillado... Métrica #roamers.";
             console
             if(args.entities){
@@ -317,7 +360,7 @@ function setupDialogs(){
             console.log(args);
             session.send(toReply); 
         }
-    ]);
+    ]);*/
 
     dialog.matches('roamersStatsNotEnoughData', [
         function (session, args, next) {
@@ -368,7 +411,7 @@ function setupDialogs(){
     });
 
     //dialog.onDefault(builder.DialogAction.beginDialog('/dont-understand'));
-    dialog.onDefault(builder.DialogAction.send('Esta no la entendí nada...'));
+    dialog.onDefault(builder.DialogAction.send('No te he entendido... Prueba con "Número de roamers de (país)"'));
 
     bot.dialog('/dont-understand', [
         function (session, args, next) {
@@ -649,33 +692,15 @@ var luisUtil={
         return null;
     },
     parseCountry: function(sentence){
-        var countryEN = builder.EntityRecognizer.findBestMatch(parse.countryListEN, sentence,0.01);
-        var countryES = builder.EntityRecognizer.findBestMatch(parse.countryListES, sentence,0.01);
-        var countryCode = builder.EntityRecognizer.findBestMatch(parse.countryCodes, sentence,0.01);
+        var countryDetected = builder.EntityRecognizer.findBestMatch(parse.countryList, sentence,0.01);
+        console.log("Country recognition: ",countryDetected);
 
-        var countryENScore = (countryEN && countryEN.score) ? countryEN.score : 0;
-        var countryESScore = (countryES && countryES.score) ? countryES.score : 0;
-        var countryCodeScore = (countryCode && countryCode.score) ? countryCode.score : 0;
-
-        console.log("Country recognition ES: ("+countryESScore+")",countryES,"\nCountryEN: ("+countryENScore+")",countryEN,"\nCCountry code: ("+countryCodeScore+")",countryCode);
-
-        if(countryESScore >= countryENScore && countryESScore >= countryCodeScore){
-            console.log("Returned",parse.countryListEN[countryES.index]);
-            return parse.countryListEN[countryES.index];
-        }
-
-        if(countryENScore >= countryCodeScore){
-            console.log("Returned",countryEN.entity);
-            return countryEN.entity;
-        }
-
-        if(countryCodeScore > 0){
-            console.log("Returned",parse.countryListEN.indexOf(parse.countryCodesEquivalency[countryCode.index]));
-            return parse.countryListEN.indexOf(parse.countryCodesEquivalency[countryCode.index]);
+        if(countryDetected && countryDetected.score > 0 && countryDetected.index>=0){
+            console.log(countryDetected.index,parse.countryListES.length);
+            return {original: sentence, equivalency: parse.countryListEquivalency[countryDetected.index], spanish: parse.countryListES[countryDetected.index]};
         }
 
         return null;
-
     },
     parseSubscriber: function(sentence){
         var subscribersGeneral = builder.EntityRecognizer.findBestMatch(parse.subscribersGeneral, sentence,0.01);
@@ -703,10 +728,13 @@ var luisUtil={
         }
     },
     parseDirection: function(sentence){
-        var parseDirection = builder.EntityRecognizer.findBestMatch(["inbound","outbound","in","out"], sentence);
-        console.log("Direction recognition: ",parseDirection);
+        var directions=["inbound","outbound","in","out"];
+        var directionsEquivalency=["inbound","outbound","inbound","outbound"];
+        console.log("Direction sentence: ",sentence);
+        var parseDirection = builder.EntityRecognizer.findBestMatch(directions, sentence);
+        console.log("Direction recognition: ", parseDirection);
         if(parseDirection && parseDirection.score){
-            return parseDirection.entity;
+            return {original: sentence, equivalency: directionsEquivalency[parseDirection.index]}
         }
         return null;
     }

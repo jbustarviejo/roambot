@@ -490,7 +490,6 @@ function setupDialogs(){
             console.log("Email result",session,"Answer",result.response);
 
             var emailEntered=result.response.trim();
-
             if(emailEntered.toLowerCase().endsWith("email corporativo")||emailEntered.toLowerCase().endsWith("email corporativo:")){
                 session.send("¡Anda! Tenemos un graciosillo... Lo que quiero es que me escribas tu email de la empresa");
                 session.reset('/get-user-email',{welcome: false});
@@ -675,7 +674,7 @@ var util={
         if(!validEmail){
             return -1;
         }
-        if(!email.endsWith("telefonica.es")||!email.endsWith("telefonica.com")){
+        if(!email.endsWith("telefonica.es") && !email.endsWith("telefonica.com")){
             return -2;
         }
         return 1;

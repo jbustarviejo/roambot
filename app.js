@@ -102,35 +102,10 @@ console.log("=>RoamBot starting...");
         setupDialogs();
 
         console.log("=>RoamBot ready!");
-    });
-        
+    });      
 })();
 
 function setupDialogs(){
-    bot.on('contactRelationUpdate', function (message) {
-        console.log(message);
-        if (message.action === 'add') {
-            database.getUser(message.user.id, function(dbUser){
-                if(!dbUser){
-                    name = util.getFirstName(message.user ? message.user.name: null);
-                    name = name ? " "+name : "";
-
-                    database.users.insert({_id: message.user.id ,createdAt: new Date(), userName: message.user.name, authorized: false, welcomed: true});
-
-                    var reply = new builder.Message().address(message.address).text("¡Hola%s! Soy Roambot, el bot de estadísticas de roaming de GRTU, gracias por agregarme :)", name);
-                    bot.send(reply);
-                }else{
-                    name = util.getFirstName(message.user ? message.user.name: null);
-                    name = name ? " "+name : "";
-
-                    var reply = new builder.Message().address(message.address).text("¡Hola de nuevo%s! ;)", name);
-                    bot.send(reply);
-                }
-            });
-        } else {
-            // delete their data
-        }
-    });
 
     //=========================================================
     // Bots Intents dialogs
@@ -178,190 +153,6 @@ function setupDialogs(){
         },
     ]);
 
-    /*
-    dialog.matches('roamersNumberALLOMG!!, [
-        function (session, args, next) {
-            var toReply="Vale, te digo lo que he pillado... Métrica #roamers.";
-            console
-            if(args.entities){
-
-                var direction = builder.EntityRecognizer.findEntity(args.entities, 'direction');
-
-                var countryList = builder.EntityRecognizer.findAllEntities(args.entities, 'country');
-                var subscriberList = builder.EntityRecognizer.findAllEntities(args.entities, 'subscriber');
-
-                var origin = builder.EntityRecognizer.findEntity(args.entities, 'origin');
-                var destination = builder.EntityRecognizer.findEntity(args.entities, 'destination');
-
-                var timeList = builder.EntityRecognizer.findAllEntities(args.entities, 'time');
-                var dateIntervalStart = builder.EntityRecognizer.findEntity(args.entities, 'time::dateIntervalStart');
-                var dateIntervalEnd = builder.EntityRecognizer.findEntity(args.entities, 'time::dateIntervalEnd');
-                var puntualDate = builder.EntityRecognizer.findEntity(args.entities, 'time::puntualDate');
-
-                var knowData={};
-
-                if(direction){
-                    var parsedDirection = luisUtil.parseDirection(direction.entity);
-                }
-                
-                if(parsedDirection){
-                    //If direction
-                    if(origin){
-
-                        toReply+=" Origen: ";
-
-                        country=luisUtil.getElementInSentence(origin, countryList);
-
-                        if(country){
-                            var parsedCountry=luisUtil.parseCountry(country.entity);
-                            toReply+=" país "+parsedCountry+" ['"+country.entity+"'],";
-                            if(parsedCountry){
-                                knowData.originCountry=parsedCountry;
-                            }
-                        }else{
-                            toReply+=" no sé el país,";
-                        } 
-
-                        subscriber=luisUtil.getElementInSentence(origin, subscriberList);
-
-                        if(subscriber){
-                            var parsedSubscriber=luisUtil.parseSubscriber(subscriber.entity);
-                            toReply+=" operadora "+parsedSubscriber+" ['"+subscriber.entity+"'],";
-                            if(parsedCountry){
-                                knowData.originSubscriber=parsedSubscriber;
-                            }
-                        }else{
-                            toReply+=" no sé la operadora,";
-                        }
-
-                        toReply+=" en dirección "+direction.entity;
-                        knowData.direction=parsedDirection;
-
-                    }else if(destination){
-
-                        country=luisUtil.getElementInSentence(destination, countryList);
-
-                        toReply+=" Destino: ";
-                        if(country){
-                            var parsedCountry=luisUtil.parseCountry(country.entity);
-                            toReply+=" país "+parsedCountry+" ['"+country.entity+"'],";
-                            if(parsedCountry){
-                                knowData.originCountry=parsedCountry;
-                            }
-                        }else{
-                            toReply+=" no sé el país,";
-                        } 
-
-                        subscriber=luisUtil.getElementInSentence(destination, subscriberList);
-
-                        if(subscriber){
-                            var parsedSubscriber=luisUtil.parseSubscriber(subscriber.entity);
-                            toReply+=" operadora "+parsedSubscriber+" ['"+subscriber.entity+"'],";
-                            if(parsedCountry){
-                                knowData.originSubscriber=parsedSubscriber;
-                            }
-                        }else{
-                            toReply+=" no sé la operadora,";
-                        }
-
-                        toReply+=" en dirección "+direction.entity;
-                        knowData.direction=parsedDirection;
-                        
-                    }else{
-                        toReply+=" Dirección "+parsedDirection+", pero no sé el país ni la operadora.";
-                    }
-                }else{
-                    //No direction
-                    if(origin){
-                        toReply+=" Origen: ";
-
-                        country=luisUtil.getElementInSentence(origin, countryList);
-
-                        if(country){
-                            var parsedCountry=luisUtil.parseCountry(country.entity);
-                            toReply+=" país "+parsedCountry+" ['"+country.entity+"'],";
-                            if(parsedCountry){
-                                knowData.originCountry=parsedCountry;
-                            }
-                        }else{
-                            toReply+=" no sé el país,";
-                        } 
-
-                        subscriber=luisUtil.getElementInSentence(origin, subscriberList);
-
-                        if(subscriber){
-                            var parsedSubscriber=luisUtil.parseSubscriber(subscriber.entity);
-                            toReply+=" operadora "+parsedSubscriber+" ['"+subscriber.entity+"'],";
-                            if(parsedCountry){
-                                knowData.originSubscriber=parsedSubscriber;
-                            }
-                        }else{
-                            toReply+=" no sé qué operadora.";
-                        }
-                    }else{
-                        toReply+=" No sé el país ni la operadora.";
-                    }
-
-                    if(destination){
-                        toReply+=" Destino: ";
-
-                        country=luisUtil.getElementInSentence(destination, countryList);
-
-                        if(country){
-                            var parsedCountry=luisUtil.parseCountry(country.entity);
-                            toReply+=" país "+parsedCountry+" ['"+country.entity+"'],";
-                            if(parsedCountry){
-                                knowData.destinationCountry=parsedCountry;
-                            }
-                        }else{
-                            toReply+=" no sé el país,";
-                        } 
-
-                        subscriber=luisUtil.getElementInSentence(destination, subscriberList);
-
-                        if(subscriber){
-                            var parsedSubscriber=luisUtil.parseSubscriber(subscriber.entity);
-                            toReply+=" operadora "+parsedSubscriber+" ['"+subscriber.entity+"'],";
-                            if(parsedCountry){
-                                knowData.destinationSubscriber=parsedSubscriber;
-                            }
-                        }else{
-                            toReply+=" no sé qué operadora.";
-                        }
-                    }else{
-                        toReply+=" No sé el país ni la operadora.";
-                    }
-                }
-
-                //Dates - time
-                if(puntualDate){
-                    toReply+=" El tiempo es '"+puntualDate.entity+"'";
-                    knowData.puntualDate=puntualDate.entity;
-                }else{
-                    if(dateIntervalStart){
-                        knowData.dateIntervalStart=dateIntervalStart.entity;
-                        if(dateIntervalEnd){
-                            toReply+=" El tiempo es 'Desde "+dateIntervalStart.entity+"', Hasta "+dateIntervalEnd.entity+"'.";
-                            knowData.dateIntervalEnd=dateIntervalEnd.entity;
-                        }else{
-                            toReply+=" El tiempo es 'Desde "+dateIntervalStart.entity+"', pero no sé 'hasta cuándo', daría los datos hasta hoy.";
-                        }
-                    }else if(dateIntervalEnd){
-                        knowData.dateIntervalEnd=dateIntervalEnd.entity;
-                        toReply+=" El tiempo es 'Hasta "+dateIntervalEnd.entity+"', pero no sé 'desde cuándo.'";
-                    }else{
-                        toReply+=" No sé la unidad de tiempo, daría los de las últimas 24hrs.";
-                    }
-                }
-
-                session.beginDialog('/get-roamers-number-data',knowData);
-
-            }
-            console.log(args);
-            session.send(toReply); 
-        }
-    ]);*/
-
     dialog.matches('roamersStatsNotEnoughData', [
         function (session, args, next) {
             var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
@@ -373,21 +164,34 @@ function setupDialogs(){
         }
     ]);
 
-
-    /*
- =>Número de roamers: 
-    Por hora, día, comparado con ayer o el mismo dia de la semana anterior
-    tanto in como out
-    por remote partner
-    por pais
-
-    Cuántos roamers habían de Perú el 16-sept a las 18 registrados en Orange España
-
-    */
-
     //=========================================================
     // Bots Defaults
     //=========================================================
+
+    bot.on('contactRelationUpdate', function (message) {
+        console.log(message);
+        if (message.action === 'add') {
+            database.getUser(message.user.id, function(dbUser){
+                if(!dbUser){
+                    name = util.getFirstName(message.user ? message.user.name: null);
+                    name = name ? " "+name : "";
+
+                    database.users.insert({_id: message.user.id ,createdAt: new Date(), userName: message.user.name, authorized: false, welcomed: true});
+
+                    var reply = new builder.Message().address(message.address).text("¡Hola%s! Soy Roambot, el bot de estadísticas de roaming de GRTU, gracias por agregarme :)", name);
+                    bot.send(reply);
+                }else{
+                    name = util.getFirstName(message.user ? message.user.name: null);
+                    name = name ? " "+name : "";
+
+                    var reply = new builder.Message().address(message.address).text("¡Hola de nuevo%s! ;)", name);
+                    bot.send(reply);
+                }
+            });
+        } else {
+            // delete their data
+        }
+    });
 
     dialog.onBegin(function (session, args, next) {
         database.getUser(session.message.user.id, function(dbUser){
@@ -411,7 +215,7 @@ function setupDialogs(){
     });
 
     //dialog.onDefault(builder.DialogAction.beginDialog('/dont-understand'));
-    dialog.onDefault(builder.DialogAction.send('No te he entendido... Prueba con "Número de roamers de (país)"'));
+    dialog.onDefault(builder.DialogAction.send('No te he entendido... Prueba con algo del estilo a "Dime el número de roamers inbound de Italia de las últimas 12 horas"'));
 
     bot.dialog('/dont-understand', [
         function (session, args, next) {
@@ -447,35 +251,6 @@ function setupDialogs(){
     //=========================================================
     // Bots Dialogs
     //=========================================================
-
-    bot.dialog('/get-roamers-number-data', [
-        function (session, args, next) {
-            console.log("=>Received args",args,args.originCountry,args.originSubscriber);
-            if(args.direction){
-                metrics.getRoamersByDirection(session, args.direction, args.originCountry, args.originSubscriber);
-                if(args.originCountry){
-                    if(args.originSubscriber){
-                        session.send(" ===> #Número de roamers "+args.direction+" de "+args.originCountry+" - "+args.originSubscriber);
-                    }else{
-                        session.send(" ===> #Número de roamers "+args.direction+" de "+args.originCountry+" - xxx ");
-                    }
-                }else{
-                    if(args.originSubscriber){
-                        session.send(" ===> #Número de roamers "+args.direction+" de xxx - "+args.originSubscriber);
-                    }else{
-                        session.send(" ===> #Número de roamers "+args.direction+" de xxx - xxx. Necesario algún dato más para continuar ");
-                    }
-                }
-            }else{
-
-            }
-            session.endDialog();
-        },
-        function (session, result, next) {
-            console.log(result);
-           
-        },
-    ]);
 
     bot.dialog('/get-user-email', [
         function (session, args) {
@@ -590,73 +365,6 @@ function setupDialogs(){
         });
     };
 
-    /*
-    dialog.matches('roamersNumberOutbound', [
-        function (session, args, next) {
-            console.log("Model for outbound: ",args);
-            var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
-            var time = builder.EntityRecognizer.findEntity(args.entities, 'time');
-            if(time){
-                time=time.entity;
-            }else{
-                time=null;
-            }
-            if (!country) {
-                builder.Prompts.text(session, "¿De qué país querrías saber el número de roamers?");
-            } else {
-                next({ country: country.entity, time: time});
-            }
-        },
-        function (session, results) {
-            console.log(results);
-            if (results.country) {
-                if(results.time){
-                    session.send("Métrica recuperada: #Roamers outbound de %s para %s", results.country, results.time);
-                    console.log("Métrica recuperada: #Roamers outbound de %s para %s", results.country, results.time);
-                    metrics.getOutboundRoamers(session, results.country, results.time);
-                }else{
-                    session.send("Métrica recuperada: #Roamers outbound de %s (más reciente)", results.country);
-                    metrics.getOutboundRoamers(session, results.country);   
-                }
-            } else {
-                session.send("Métrica recuperada: #Roamers global");
-            }
-        }
-    ]);
-
-    dialog.matches('roamersNumberInbound', [
-        function (session, args, next) {
-            console.log("Model for inbound: ",args);
-            var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
-            var time = builder.EntityRecognizer.findEntity(args.entities, 'time');
-            if(time){
-                time=time.entity;
-            }else{
-                time=null;
-            }
-            if (!country) {
-                builder.Prompts.text(session, "¿De qué país querrías saber el número de roamers?");
-            } else {
-                next({ country: country.entity, time: time});
-            }
-        },
-        function (session, results) {
-            console.log(results);
-            if (results.country) {
-                if(results.time){
-                    session.send("Métrica recuperada: #Roamers inbound de %s para %s", results.country, results.time);
-                    console.log("Métrica recuperada: #Roamers inbound de %s para %s", results.country, results.time);
-                    metrics.getOutboundRoamers(session, results.country, results.time);
-                }else{
-                    session.send("Métrica recuperada: #Roamers inbound de %s (más reciente)", results.country);
-                    metrics.getOutboundRoamers(session, results.country);   
-                }
-            } else {
-                session.send("Métrica recuperada: #Roamers global");
-            }
-        }
-    ]);
-    }*/
 }
 
 var util={

@@ -18,7 +18,6 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 	database.reports = db.collection('reports',function(){
     	database.reportsDataInbound = db.collection('reportsDataInbound',function(){
     		database.reportsDataOutbound = db.collection('reportsDataOutbound',function(){
-				//MAIN
 				database.getNewestReport=function(callback){
 					this.reports.find().sort({createdAt : 1}).limit(1).toArray(function(err, docs){
 				        if (docs && docs.length>0){
@@ -61,27 +60,29 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				    return dateArray;
 				}
 				files.updateReportsData=function(){
-					var reportsList = files.getReportsListToParse(function(reportsList){
+					/*var reportsList = files.getReportsListToParse(function(reportsList){
 						console.log(reportsList);
-						if(!reportsList){
+						reportsList=null; //REMOVE THIS LINE IN FUTURE
+						if(!reportsList){*/
 							//Parse all
-							fs.readdir("./reports", function(err, items) {
-							    for (var i=0; i<items.length; i++) {
-							        if(items[i].endsWith(".csv")){
-							        	debug && console.log("Proccessing file: "+items[i]);
-										files.readReport(items[i]);
-							        }
-							    }
-							});
-						}else{
+					fs.readdir("./reports", function(err, items) {
+					    for (var i=0; i<items.length; i++) {
+					        if(items[i].endsWith(".csv")){
+					        	debug && console.log("Proccessing file: "+items[i]);
+								files.readReport(items[i]);
+					        }
+					    }
+					});
+						/*}else{
 							//Parse only a few
 						}
-					});
+					});*/
 				};
 				files.readReport=function(reportName){
-					var reportType=reportName.startsWith("Inbound")? "Inbound":"Outbound";
-					var report={name: reportName, type: reportType, reportDate: new Date("2016-01-03"), createdAt: new Date()}; 
-					//TODO: get date of this report
+					var reportParts=reportName.split(" ");
+					var reportType=reportParts[0];
+					var reportDate=reportParts[3].substring(4).substring(0,reportParts[3].length-8).split("-");
+					var report={name: reportName, type: reportType, reportDate: new Date(reportDate[0]+"-"+reportDate[1]+"-"+reportDate[2]+" "+reportDate[3]+":"+reportDate[4]+":"+reportDate[5]+"Z"), createdAt: new Date()}; 
 
 					var stream = fs.createReadStream("./reports/"+reportName);
 					var csvStream = csv({delimiter: ";"})
@@ -95,12 +96,13 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 						        	dataDate: files.dateFromReport(data[0]),
 						        	dataType: reportType,
 						        	subscriberOperatorName: data[1],
+						        	subscriberCountryName: "Peru",
 						        	originCountry: data[2],
 						        	originOperatorName: data[3],
 						        	sumTransactions: parseInt(data[4]),
 						        	successes: parseInt(data[5])
 						        }
-						        database.reportsDataInbound.insert(cell);
+						        database.insertInboundData(cell);
 					        }else{ //Outbound
 					        	var cell={
 						        	dataDate: files.dateFromReport(data[0]),
@@ -112,17 +114,36 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 						        	sumTransactions: parseInt(data[4]),
 						        	successes: parseInt(data[5])
 						        }
-						        database.reportsDataOutbound.insert(cell);
+						        database.insertOutboundData(cell);
 					        }
 					    })
 					    .on("end", function(){
+					    	stream.close();
 					    	database.reports.insert(report);
+					    //	fs.unlink("./reports/"+reportName);
 					        console.log("done");
 					    });
-					 
 					stream.pipe(csvStream);
 				};
-
+				database.insertInboundData=function(report){
+					database.reportsDataInbound.findOne({subscriberOperatorName: report.subscriberOperatorName, subscriberCountryName: report.subscriberCountryName, originOperatorName: report.originOperatorName, reportDate: report.reportDate, originCountry: report.originCountry}, function(err, doc){
+		                if (doc != null){
+		                	console.log("data already stored",report,doc);
+		                    //Already stored, continue...
+		                }else{
+		                    database.reportsDataInbound.insert(report);
+		                }
+		            });
+				}
+				database.insertOutboundData=function(report){
+					database.reportsDataOutbound.findOne({subscriberOperatorName: report.subscriberOperatorName, subscriberCountryName: report.subscriberCountryName, originOperatorName: report.originOperatorName, reportDate: report.reportDate}, function(err, doc){
+		                if (doc){
+		                    //Already stored, continue...
+		                }else{
+		                    database.reportsDataOutbound.insert(report);
+		                }
+		            });
+				}
 				files.dateFromReport=function(dateStr){
 					var parts = dateStr.split("/");
 					var dt = new Date(Date.UTC(parseInt(parts[0], 10),

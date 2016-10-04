@@ -7,7 +7,7 @@ module.exports = {
 	getRoamersByCountryAllCountries(session, direction){
 		var self=this;
 
-		console.log("Direction for report",direction,{originCountry: country.equivalency}, {sumSuccesses: 1});
+		console.log("Direction for report",direction);
 
 		if(direction=="inbound"){
 			self.database.reportsDataInbound.find({},{sumSuccesses: 1}).toArray(function(err, docs){
@@ -47,6 +47,49 @@ module.exports = {
 		    });
 		}
 	},
+	getRoamersByCountryAndSubscriberAllCountries(session, direction, subscriber){
+		var self=this;
+
+		console.log("Direction for report",direction);
+
+		if(direction=="inbound"){
+			self.database.reportsDataInbound.find({originOperatorName: subscriber.equivalency},{sumSuccesses: 1}).toArray(function(err, docs){
+				var sumSuccesses=0;
+
+		        if (docs && docs.length>0){
+		            for (var i = 0; i < docs.length; i++) {
+		            	sumSuccesses+=docs[i].sumSuccesses;
+		            }
+		        }
+
+		        if(sumSuccesses>0){
+					session.send("En total, el número de roamers de Perú en inbound en las últimas 24 horas para la operadora %s es de %s", subscriber.equivalency, self.numberWithDots(sumTransactions));
+	            	session.endDialog();
+		        }else{
+					session.send("No tengo datos de Perú outbound para la operadora %s...", subscriber.equivalency);
+	            	session.endDialog();
+		        }
+		    });
+		}else{
+			self.database.reportsDataOutbound.find({subscriberOperatorName: subscriber.equivalency},{sumSuccesses: 1}).toArray(function(err, docs){
+				var sumSuccesses=0;
+
+		        if (docs && docs.length>0){
+		            for (var i = 0; i < docs.length; i++) {
+		            	sumSuccesses+=docs[i].sumSuccesses;
+		            }
+		        }
+
+		        if(sumSuccesses>0){
+					session.send("En total, el número de roamers de Perú en outbound en las últimas 24 horas para la operadora %s es de %s", subscriber.equivalency, self.numberWithDots(sumTransactions));
+	            	session.endDialog();
+		        }else{
+					session.send("No tengo datos de Perú outbound para la operadora %s...", subscriber.equivalency);
+	            	session.endDialog();
+		        }
+		    });
+		}
+	},
 	getRoamersByCountryBothDirectionsAllCountries(session){
 		var self=this;
 
@@ -74,6 +117,35 @@ module.exports = {
 	            	session.endDialog();
 		        }else{
 					session.send("No tengo datos de Perú...");
+	            	session.endDialog();
+		        }
+		    });
+	    });
+	},
+	getRoamersByCountryAndSubscriberBothDirectionsAllCountries(session, subscriber){
+		var self=this;
+
+		var outboundTransactions=0;
+		var inboundTransactions=0;
+
+		self.database.reportsDataOutbound.find({subscriberOperatorName: subscriber.equivalency},{sumSuccesses: 1}).toArray(function(err, docs){
+	        if (docs && docs.length>0){
+	            for (var i = 0; i < docs.length; i++) {
+            		outboundTransactions+=docs[i].sumSuccesses;
+           		} 	
+            }
+            self.database.reportsDataInbound.find(originOperatorName: subscriber.equivalency},{sumSuccesses: 1}).toArray(function(err, docs){
+		        if (docs && docs.length>0){
+		            for (var i = 0; i < docs.length; i++) {
+		            	inboundTransactions+=docs[i].sumSuccesses;
+		            }
+		        }
+		        var sumSuccesses=outboundTransactions+inboundTransactions;
+		        if(sumSuccesses>0){
+					session.send("En total, el número de roamers de Perú para la operadora %s en las últimas 24 horas es de %s (%s de inbound y %s de outbound)", subscriber.equivalency, self.numberWithDots(sumTransactions), self.numberWithDots(inboundTransactions), self.numberWithDots(outboundTransactions));
+	            	session.endDialog();
+		        }else{
+					session.send("No tengo datos de Perú para la operadora %s",subscriber.equivalency);
 	            	session.endDialog();
 		        }
 		    });
@@ -113,15 +185,43 @@ module.exports = {
 		    });
 	    });
 	},
+	getRoamersByCountryAndSubscriberBothDirections(session, country, subscriber){
+		var self=this;
+
+		var outboundTransactions=0;
+		var inboundTransactions=0;
+
+		console.log("Country: "+country);
+
+		self.database.reportsDataOutbound.find({subscriberCountryName: country.equivalency, subscriberOperatorName: subscriber.equivalency},{sumSuccesses: 1}).toArray(function(err, docs){
+	        if (docs && docs.length>0){
+	            for (var i = 0; i < docs.length; i++) {
+            		outboundTransactions+=docs[i].sumSuccesses;
+           		} 	
+            }
+
+            self.database.reportsDataInbound.find({originCountry: country.equivalency, originOperatorName: subscriber.equivalency},{sumSuccesses: 1}).toArray(function(err, docs){
+		        if (docs && docs.length>0){
+		            for (var i = 0; i < docs.length; i++) {
+		            	inboundTransactions+=docs[i].sumSuccesses;
+		            }
+		        }
+
+		        var sumSuccesses=outboundTransactions+inboundTransactions;
+		        if(sumSuccesses>0){
+					session.send("En total, el número de roamers de Perú para la operadora %s de %s para las últimas 24 horas es de %s (%s de inbound y %s de outbound)", subscriber.equivalency, country.spanish, self.numberWithDots(sumTransactions), self.numberWithDots(inboundTransactions), self.numberWithDots(outboundTransactions));
+	            	session.endDialog();
+		        }else{
+					session.send("No tengo datos de Perú para la operadora %s de %s (0 roamers) en las últimas 24 horas", subscriber.equivalency, country.spanish);
+	            	session.endDialog();
+		        }
+		    });
+	    });
+	},
 	getRoamersByCountry(session, country, direction){
 		var self=this;
 
-		console.log("Direction for report",direction,{originCountry: country.equivalency}, {sumSuccesses: 1});
-
 		if(direction=="inbound"){
-			self.database.reportsDataInbound.find().toArray(function(err, docs){
-				console.log(err,docs);
-			});
 			self.database.reportsDataInbound.find({originCountry: country.equivalency}, {sumSuccesses: 1}).toArray(function(err, docs){
 				console.log(err,docs);
 				var sumSuccesses=0;
@@ -155,6 +255,48 @@ module.exports = {
 	            	session.endDialog();
 		        }else{
 					session.send("No tengo datos de Perú outbound para %s en las últimas 24 horas", country.spanish);
+	            	session.endDialog();
+		        }
+		    });
+		}
+	},
+	getRoamersByCountryAndSubscriber(session, country, direction, subscriber){
+		var self=this;
+
+		if(direction=="inbound"){
+			self.database.reportsDataInbound.find({originCountry: country.equivalency, originOperatorName: subscriber.equivalency}, {sumSuccesses: 1}).toArray(function(err, docs){
+				console.log(err,docs);
+				var sumSuccesses=0;
+
+		        if (docs && docs.length>0){
+		            for (var i = 0; i < docs.length; i++) {
+		            	sumSuccesses+=docs[i].sumSuccesses;
+		            }
+		        }
+
+		        if(sumSuccesses>0){
+					session.send("En total, el número de roamers de Perú en inbound de %s para %s de las últimas 24 horas es de %s", subscriber.equivalency, country.spanish, self.numberWithDots(sumTransactions));
+	            	session.endDialog();
+		        }else{
+					session.send("No tengo datos de Perú inbound de %s para %s en las últimas 24 horas", subscriber.equivalency, country.spanish);
+	            	session.endDialog();
+		        }
+		    });
+		}else{
+			self.database.reportsDataOutbound.find({subscriberCountryName: country.equivalency, subscriberOperatorName: subscriber.equivalency}},{sumSuccesses: 1}).toArray(function(err, docs){
+				var sumSuccesses=0;
+
+		        if (docs && docs.length>0){
+		            for (var i = 0; i < docs.length; i++) {
+		            	sumSuccesses+=docs[i].sumSuccesses;
+		            }
+		        }
+
+		        if(sumSuccesses>0){
+					session.send("En total, el número de roamers de Perú en outbound de %s para %s de las últimas 24 horas es de %s", subscriber.equivalency, country.spanish, self.numberWithDots(sumTransactions));
+	            	session.endDialog();
+		        }else{
+					session.send("No tengo datos de Perú outbound de %s para %s en las últimas 24 horas", subscriber.equivalency, country.spanish);
 	            	session.endDialog();
 		        }
 		    });

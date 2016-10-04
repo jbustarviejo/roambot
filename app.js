@@ -115,39 +115,69 @@ function setupDialogs(){
         function (session, args, next) {
             console.log("Detected",args);
 
-            var countryList = builder.EntityRecognizer.findAllEntities(args.entities, 'country');
+            var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
+            var subscriber= builder.EntityRecognizer.findAllEntity(args.entities, 'subscriber');
             var direction = builder.EntityRecognizer.findEntity(args.entities, 'direction');
 
-            for(var i=0;i<countryList.length;i++){
-                countryList[i].equivalency=null;
-                if(countryList[i].entity){
-                    countryList[i].equivalency=luisUtil.parseCountry(countryList[i].entity);
-                }
+            //Get country
+            if(country && country.entity){
+                country.equivalency=luisUtil.parseCountry(country.entity);
             }
+
+            //inbound or outbound
             if(direction && direction.entity){
                 var directionParsed = luisUtil.parseDirection(direction.entity);
             }else{
                 var directionParsed = null;
             }
-            console.log("Country List",countryList);
-            next({countryList: countryList, direction: directionParsed});
+
+            //Get Subscriber
+            if(subscriber && subscriber.entity){
+                if(country && country.entity && country.equivalency.entity){
+                    //If Country is easy to get subscriber
+                    subscriber.equivalency=luisUtil.parseSubscriber(subscriber.entity, country.equivalency, function(equivalency){
+                        subscriber.equivalency=equivalency;
+                        next({country: country, subscriber: subscriber, direction: directionParsed});
+                    });   
+                }else{
+                    subscriber.equivalency=luisUtil.parseSubscriber(subscriber.entity, null, function(equivalency){
+                        subscriber.equivalency=equivalency;
+                        next({country: country, subscriber: subscriber, direction: directionParsed});           
+                    }); 
+                }
+            }
         },
         function (session, result, next) {
-            //1 country
-            console.log(result.countryList[0]);
+            console.log("Args 2", result);
 
-            if(result.countryList[0] && result.countryList[0].equivalency && result.countryList[0].equivalency.equivalency){
-                entity=result.countryList[0].equivalency;
+            if(result.country && result.country.equivalency && result.country.equivalency.equivalency){
+                countryEntity=result.country.equivalency;
                 if(result.direction && result.direction.equivalency){
-                    metrics.getRoamersByCountry(session, entity, result.direction.equivalency);
+                    if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
+                        metrics.getRoamersByCountryAndSubscriber(session, countryEntity, result.direction.equivalency, result.subscriber.equivalency);
+                    }else{
+                        metrics.getRoamersByCountry(session, countryEntity, result.direction.equivalency);
+                    }
                 }else{
-                    metrics.getRoamersByCountryBothDirections(session,entity);
+                    if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
+                        metrics.getRoamersByCountryAndSubscriberBothDirections(session,countryEntity,result.subscriber.equivalency);
+                    }else{
+                        metrics.getRoamersByCountryBothDirections(session,countryEntity);
+                    }
                 }
             }else{
                 if(result.direction && result.direction.equivalency){
-                    metrics.getRoamersByCountryAllCountries(session, result.direction.equivalency);
+                    if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
+                        metrics.getRoamersByCountryAndSubscriberAllCountries(session, result.direction.equivalency, result.subscriber.equivalency);
+                    }else{
+                        metrics.getRoamersByCountryAllCountries(session, result.direction.equivalency);
+                    }
                 }else{
-                    metrics.getRoamersByCountryBothDirectionsAllCountries(session);
+                    if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
+                        metrics.getRoamersByCountryAndSubscriberBothDirectionsAllCountries(session, result.direction.equivalency);
+                    }else{
+                        metrics.getRoamersByCountryBothDirectionsAllCountries(session);
+                    }
                 }
             }
         },
@@ -399,40 +429,29 @@ var luisUtil={
         return null;
     },
     parseCountry: function(sentence){
-        var countryDetected = builder.EntityRecognizer.findBestMatch(parse.countryList, sentence,0.01);
+        var countryDetected = builder.EntityRecognizer.findBestMatch(parse.countryList, sentence, 0.01);
         console.log("Country recognition: ",countryDetected);
 
         if(countryDetected && countryDetected.score > 0 && countryDetected.index>=0){
-            console.log(countryDetected.index,parse.countryListES.length);
             return {original: sentence, equivalency: parse.countryListEquivalency[countryDetected.index], spanish: parse.countryListES[countryDetected.index]};
         }
 
         return null;
     },
-    parseSubscriber: function(sentence){
-        var subscribersGeneral = builder.EntityRecognizer.findBestMatch(parse.subscribersGeneral, sentence,0.01);
-        var subscribersConcrete = builder.EntityRecognizer.findBestMatch(parse.subscribersConcrete, sentence,0.01);
-        console.log("Subscriber recognition concrete: ",subscribersConcrete,"\nGeneral:",subscribersGeneral);
-        if(subscribersConcrete && subscribersConcrete.entity && subscribersGeneral && subscribersGeneral.entity ){
-            //Both equivalences
-            if(subscribersGeneral.score>=subscribersConcrete.score){
-                //Better in concrete
-                return parse.subscribersConcrete[subscribersGeneral.index];
-            }else{
-                //Better in concrete, return in general
-                return subscribersConcrete.entity;
-            }
-        }else{
-            if(subscribersGeneral && subscribersGeneral.entity){
-                //Better in general
-                return parse.subscribersConcrete[subscribersGeneral.index];
-            }else if(subscribersConcrete && subscribersConcrete.entity ){
-                //Better in concrete, return in general
-                return subscribersConcrete.entity;
-            }else{
-                return null;
-            }
+    parseSubscriber: function(sentence, country, callback){
+        if(country){
+            //TODO by country
         }
+        //Detect from all operators
+        var subscriberDetected = builder.EntityRecognizer.findBestMatch(parse.subscribersList, sentence, 0.01);
+        console.log("subscriber recognition from all: ", sentence);
+
+        if(subscriberDetected && subscriberDetected.score > 0 && subscriberDetected.index>=0){
+            var detected = {original: sentence, equivalency: parse.subscriberListEquivalency[subscriberDetected.index]};
+            callback && callback(detected);return detected;
+        }
+
+        callback && callback(null);return null;
     },
     parseDirection: function(sentence){
         var directions=["inbound","outbound","in","out"];

@@ -14,8 +14,11 @@ config: {
         "name": "country"
       },
       {
+        "name": "subscriber"
+      },
+      {
         "name": "direction"
-      }
+      },
     ],
     "composites": [],
     "bing_entities": [],

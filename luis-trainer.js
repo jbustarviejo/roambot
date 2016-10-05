@@ -9,13 +9,13 @@ var subscriberList=parse.subscribersListBasic;
 var utterances=luisConfig.defaultUtterances;
 
 
-function writeCountryUtterance(offsetText, country, doubleCheck){
-	var countrySplit = country.replace(" ("," ( ").replace(")"," ) ").replace("  "," ").trim().split(/[\s,]+/);
+function writeEntityUtterance(offsetText, country, doubleCheck, entityName){
+	var countrySplit = country.replace(" ("," ( ").replace(")"," ) ").replace("-"," - ").replace("&"," & ").replace("  "," ").trim().split(/[\s,]+/);
 	var offsetSplitLength = 0;
 	var startPos = 0;
 
 	if(offsetText){
-		offsetSplitLength = offsetText.replace(" ("," ( ").replace(")"," ) ").replace("  "," ").trim().split(/[\s,]+/).length;
+		offsetSplitLength = offsetText.replace(" ("," ( ").replace(")"," ) ").replace("-"," - ").replace("&"," & ").replace("  "," ").trim().split(/[\s,]+/).length;
 		startPos=offsetSplitLength;
 	}
 
@@ -24,7 +24,7 @@ function writeCountryUtterance(offsetText, country, doubleCheck){
       "intent": "roamersNumber",
       "entities": [
         {
-          "entity": "country",
+          "entity": entityName,
           "startPos": startPos,
           "endPos": countrySplit.length-1+offsetSplitLength
         }
@@ -40,7 +40,7 @@ function writeCountryUtterance(offsetText, country, doubleCheck){
 		      "intent": "roamersNumber",
 		      "entities": [
 		        {
-		          "entity": "country",
+		          "entity": entityName,
 		          "startPos": startPos,
 		          "endPos": countrySplit.length-1+offsetSplitLength
 		        }
@@ -51,13 +51,13 @@ function writeCountryUtterance(offsetText, country, doubleCheck){
     }
 }
 
-function writeCountryUtteranceWithDirection(offsetText, country, keywordPosition, offsetEnd){
-	var countrySplit = country.replace(" ("," ( ").replace(")"," ) ").replace("  "," ").trim().split(/[\s,]+/);
+function writeEntityUtteranceWithDirection(offsetText, country, keywordPosition, offsetEnd, entityName){
+	var countrySplit = country.replace(" ("," ( ").replace(")"," ) ").replace("-"," - ").replace("&"," & ").replace("  "," ").trim().split(/[\s,]+/);
 	var offsetSplitLength = 0;
 	var startPos = 0;
 
 	if(offsetText){
-		offsetSplitLength = offsetText.replace(" ("," ( ").replace(")"," ) ").replace("  "," ").trim().split(/[\s,]+/).length;
+		offsetSplitLength = offsetText.replace(" ("," ( ").replace(")"," ) ").replace("-"," - ").replace("&"," & ").replace("  "," ").trim().split(/[\s,]+/).length;
 		startPos=offsetSplitLength;
 	}
 
@@ -70,7 +70,7 @@ function writeCountryUtteranceWithDirection(offsetText, country, keywordPosition
       "intent": "roamersNumber",
       "entities": [
         {
-          "entity": "country",
+          "entity": entityName,
           "startPos": startPos,
           "endPos": countrySplit.length-1+offsetSplitLength
         },
@@ -90,7 +90,7 @@ function writeCountryUtteranceWithDirection(offsetText, country, keywordPosition
 	      "intent": "roamersNumber",
 	      "entities": [
 	        {
-	          "entity": "country",
+	          "entity": entityName,
 	          "startPos": startPos,
 	          "endPos": countrySplit.length-1+offsetSplitLength
 	        },
@@ -111,22 +111,22 @@ function writeCountryUtteranceWithDirection(offsetText, country, keywordPosition
 
 //Only countries (Full)
 for(var i=0;i<countryListFull.length;i++){
-	writeCountryUtterance("",countryListFull[i],true);
+	writeEntityUtterance("",countryListFull[i],true, "country");
 }
 
 //Roamers de {country}
 for(var i=0;i<countryList.length;i++){
-	writeCountryUtterance("Roamers de ",countryList[i]);
+	writeEntityUtterance("Roamers de ",countryList[i], false, "country");
 }
 
 //Roamers {country}
 for(var i=0;i<countryList.length;i++){
-	writeCountryUtterance("Roamers ",countryList[i]);
+	writeEntityUtterance("Roamers ",countryList[i], false, "country");
 }
 
 //Número de roamers de {country}
 for(var i=0;i<countryList.length;i++){
-      writeCountryUtterance("Número de roamers de ",countryList[i]);
+    writeEntityUtterance("Número de roamers de ",countryList[i], false, "country");
 }
 
 //=========================================================
@@ -135,22 +135,22 @@ for(var i=0;i<countryList.length;i++){
 
 //Only countries (Full)
 for(var i=0;i<subscribersListFull.length;i++){
-	writeCountryUtterance("",subscribersListFull[i],true);
+	writeEntityUtterance("",subscribersListFull[i],true, "subscriber");
 }
 
-//Roamers de {country}
+//Roamers de {subscriber}
 for(var i=0;i<subscriberList.length;i++){
-	writeCountryUtterance("Roamers de ",subscriberList[i]);
+	writeEntityUtterance("Roamers de ",subscriberList[i], false, "subscriber");
 }
 
-//Roamers {country}
+//Roamers {subscriber}
 for(var i=0;i<subscriberList.length;i++){
-	writeCountryUtterance("Roamers ",subscriberList[i]);
+	writeEntityUtterance("Roamers ",subscriberList[i], false, "subscriber");
 }
 
-//Número de roamers de {country}
+//Número de roamers de {subscriber}
 for(var i=0;i<subscriberList.length;i++){
-      writeCountryUtterance("Número de roamers de ",subscriberList[i]);
+    writeEntityUtterance("Número de roamers de ",subscriberList[i], false, "subscriber");
 }
 
 //=========================================================
@@ -160,61 +160,61 @@ for(var i=0;i<subscriberList.length;i++){
 //At start
 
 for(var i=0;i<countryList.length;i++){
-	writeCountryUtteranceWithDirection("inbound de ",countryList[i],0,"");
+	writeEntityUtteranceWithDirection("inbound de ",countryList[i],0,"", "country");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeCountryUtteranceWithDirection("outbound de ",countryList[i],0,"");
+	writeEntityUtteranceWithDirection("outbound de ",countryList[i],0,"", "country");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeCountryUtteranceWithDirection("Roamers inbound de ",countryList[i],1,"");
+	writeEntityUtteranceWithDirection("Roamers inbound de ",countryList[i],1,"", "country");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeCountryUtteranceWithDirection("Roamers outbound de ",countryList[i],1,"");
+	writeEntityUtteranceWithDirection("Roamers outbound de ",countryList[i],1,"", "country");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeCountryUtteranceWithDirection("Roamers inbound ",countryList[i],1,"");
+	writeEntityUtteranceWithDirection("Roamers inbound ",countryList[i],1,"", "country");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeCountryUtteranceWithDirection("Roamers outbound ",countryList[i],1,"");
+	writeEntityUtteranceWithDirection("Roamers outbound ",countryList[i],1,"", "country");
 }
 
 for(var i=0;i<countryList.length;i++){
-    writeCountryUtteranceWithDirection("Número de roamers inbound de ",countryList[i],3,"");
+    writeEntityUtteranceWithDirection("Número de roamers inbound de ",countryList[i],3,"", "country");
 }
 
 for(var i=0;i<countryList.length;i++){
-    writeCountryUtteranceWithDirection("Número de roamers outbound de ",countryList[i],3,"");
+    writeEntityUtteranceWithDirection("Número de roamers outbound de ",countryList[i],3,"", "country");
 }
 
 //At end
 
 for(var i=0;i<countryList.length;i++){
-	writeCountryUtteranceWithDirection("",countryList[i],-1, " inbound");
+	writeEntityUtteranceWithDirection("",countryList[i],-1, " inbound", "country");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeCountryUtteranceWithDirection("",countryList[i],-1, " outbound");
+	writeEntityUtteranceWithDirection("",countryList[i],-1, " outbound", "country");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeCountryUtteranceWithDirection("Roamers de ",countryList[i],-1," inbound");
+	writeEntityUtteranceWithDirection("Roamers de ",countryList[i],-1," inbound", "country");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeCountryUtteranceWithDirection("Roamers de ",countryList[i],-1," outbound");
+	writeEntityUtteranceWithDirection("Roamers de ",countryList[i],-1," outbound", "country");
 }
 
 for(var i=0;i<countryList.length;i++){
-    writeCountryUtteranceWithDirection("Número de roamers de ",countryList[i],-1, " inbound");
+    writeEntityUtteranceWithDirection("Número de roamers de ",countryList[i],-1, " inbound", "country");
 }
 
 for(var i=0;i<countryList.length;i++){
-    writeCountryUtteranceWithDirection("Número de roamers de ",countryList[i],-1, " outbound");
+    writeEntityUtteranceWithDirection("Número de roamers de ",countryList[i],-1, " outbound", "country");
 }
 
 //=========================================================
@@ -224,73 +224,62 @@ for(var i=0;i<countryList.length;i++){
 //At start
 
 for(var i=0;i<subscriberList.length;i++){
-	writeCountryUtteranceWithDirection("inbound de ",subscriberList[i],0,"");
+	writeEntityUtteranceWithDirection("inbound de ",subscriberList[i],0,"", "subscriber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeCountryUtteranceWithDirection("outbound de ",subscriberList[i],0,"");
+	writeEntityUtteranceWithDirection("outbound de ",subscriberList[i],0,"", "subscriber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeCountryUtteranceWithDirection("Roamers inbound de ",subscriberList[i],1,"");
+	writeEntityUtteranceWithDirection("Roamers inbound de ",subscriberList[i],1,"", "subscriber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeCountryUtteranceWithDirection("Roamers outbound de ",subscriberList[i],1,"");
+	writeEntityUtteranceWithDirection("Roamers outbound de ",subscriberList[i],1,"", "subscriber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeCountryUtteranceWithDirection("Roamers inbound ",subscriberList[i],1,"");
+	writeEntityUtteranceWithDirection("Roamers inbound ",subscriberList[i],1,"", "subscriber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeCountryUtteranceWithDirection("Roamers outbound ",subscriberList[i],1,"");
+	writeEntityUtteranceWithDirection("Roamers outbound ",subscriberList[i],1,"", "subscriber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-    writeCountryUtteranceWithDirection("Número de roamers inbound de ",subscriberList[i],3,"");
+    writeEntityUtteranceWithDirection("Número de roamers inbound de ",subscriberList[i],3,"", "subscriber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-    writeCountryUtteranceWithDirection("Número de roamers outbound de ",subscriberList[i],3,"");
+    writeEntityUtteranceWithDirection("Número de roamers outbound de ",subscriberList[i],3,"", "subscriber");
 }
 
 //At end
 
 for(var i=0;i<subscriberList.length;i++){
-	writeCountryUtteranceWithDirection("",subscriberList[i],-1, " inbound");
+	writeEntityUtteranceWithDirection("",subscriberList[i],-1, " inbound", "subscriber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeCountryUtteranceWithDirection("",subscriberList[i],-1, " outbound");
+	writeEntityUtteranceWithDirection("",subscriberList[i],-1, " outbound", "subscriber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeCountryUtteranceWithDirection("Roamers de ",subscriberList[i],-1," inbound");
+	writeEntityUtteranceWithDirection("Roamers de ",subscriberList[i],-1," inbound", "subscriber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeCountryUtteranceWithDirection("Roamers de ",subscriberList[i],-1," outbound");
+	writeEntityUtteranceWithDirection("Roamers de ",subscriberList[i],-1," outbound", "subscriber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-    writeCountryUtteranceWithDirection("Número de roamers de ",subscriberList[i],-1, " inbound");
+    writeEntityUtteranceWithDirection("Número de roamers de ",subscriberList[i],-1, " inbound", "subscriber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-    writeCountryUtteranceWithDirection("Número de roamers de ",subscriberList[i],-1, " outbound");
+    writeEntityUtteranceWithDirection("Número de roamers de ",subscriberList[i],-1, " outbound", "subscriber");
 }
-
-//=========================================================
-// Subscriber + country + direction sentences
-//=========================================================
-
-
-//=========================================================
-// Time sentences
-//=========================================================
-
-
 
 //=========================================================
 // Write to file

@@ -20,7 +20,7 @@ var enableHttps=false;
 
 //Global vars
 var bot;
-var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=d501ee34-9ae0-4d74-a9f3-60f41f99a4e5&subscription-key=57964100a34f4d1aa3c5cd619690f610&q=');
+var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=1f60a9df-c43f-4793-addc-d21140dd30bc&subscription-key=57964100a34f4d1aa3c5cd619690f610&q=');
 var dialog = new builder.IntentDialog({ recognizers: [recognizer] });
 
 console.log("=>RoamBot starting...");
@@ -113,11 +113,13 @@ function setupDialogs(){
 
     dialog.matches('roamersNumber', [
         function (session, args, next) {
-            console.log("Detected",args);
+            console.log("=>Detected by Luis: \n",args,"\n");
 
             var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
             var subscriber= builder.EntityRecognizer.findEntity(args.entities, 'subscriber');
             var direction = builder.EntityRecognizer.findEntity(args.entities, 'direction');
+            var quantity = builder.EntityRecognizer.findEntity(args.entities, 'time::quantity');
+            var period = builder.EntityRecognizer.findEntity(args.entities, 'time::period');
 
             //Get country
             if(country && country.entity){
@@ -136,38 +138,74 @@ function setupDialogs(){
                 subscriber.equivalency=luisUtil.parseSubscriber(subscriber.entity);
             }
 
-            next({country: country, subscriber: subscriber, direction: directionParsed});
+            var timePeriod = {};
+            timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * 24);
+            timePeriod.string = "las últimas 24 horas";
+
+            if(quantity && quantity.entity && period && period.entity){
+                console.log("Q y P");
+                quantity.equivalency=luisUtil.parseTimeQuantity(quantity.entity);
+                period.equivalency=luisUtil.parseTimePeriod(period.entity);
+
+                //Period type
+                if(period.equivalency && period.equivalency.equivalency){
+                    console.log("Pe1");
+                    if(quantity.equivalency && quantity.equivalency.equivalency){
+                        console.log("Qe1 y Pe1");
+                        timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * quantity.equivalency.equivalency * period.equivalency.equivalency);
+                        if(quantity.equivalency.equivalency==1){
+                            timePeriod.string = period.equivalency.single+" "+period.equivalency.toSingle;   
+                        }else{
+                            timePeriod.string = period.equivalency.plural+" "+quantity.equivalency.equivalency+" "+period.equivalency.toPlural;   
+                        }
+                    }else{
+                        console.log("Pe2");
+                        timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * 1 * period.equivalency.equivalency);
+                        timePeriod.string = period.equivalency.plural+" "+period.equivalency.toSingle;   
+                    }
+                }
+            }else if(period && period.entity){
+                console.log("P");
+                period.equivalency=luisUtil.parseTimePeriod(period.entity);
+                if(period.equivalency && period.equivalency.equivalency){
+                    console.log("Pe");
+                    timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * 1 * period.equivalency.equivalency);
+                    timePeriod.string = period.equivalency.toSingle+" "+period.equivalency.single;   
+                }
+            }
+
+            next({country: country, subscriber: subscriber, direction: directionParsed, timePeriod: timePeriod});
         },
         function (session, result, next) {
-            console.log("Args 2", result);
+            console.log("=>Args received in l2\n", result,"\n");
 
             if(result.country && result.country.equivalency && result.country.equivalency.equivalency){
                 countryEntity=result.country.equivalency;
                 if(result.direction && result.direction.equivalency){
                     if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
-                        metrics.getRoamersByCountryAndSubscriber(session, countryEntity, result.direction.equivalency, result.subscriber.equivalency);
+                        metrics.getRoamersByCountryAndSubscriber(session, countryEntity, result.direction.equivalency, result.subscriber.equivalency, result.timePeriod);
                     }else{
-                        metrics.getRoamersByCountry(session, countryEntity, result.direction.equivalency);
+                        metrics.getRoamersByCountry(session, countryEntity, result.direction.equivalency, result.timePeriod);
                     }
                 }else{
                     if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
-                        metrics.getRoamersByCountryAndSubscriberBothDirections(session,countryEntity,result.subscriber.equivalency);
+                        metrics.getRoamersByCountryAndSubscriberBothDirections(session,countryEntity,result.subscriber.equivalency, result.timePeriod);
                     }else{
-                        metrics.getRoamersByCountryBothDirections(session,countryEntity);
+                        metrics.getRoamersByCountryBothDirections(session,countryEntity, result.timePeriod);
                     }
                 }
             }else{
                 if(result.direction && result.direction.equivalency){
                     if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
-                        metrics.getRoamersByCountryAndSubscriberAllCountries(session, result.direction.equivalency, result.subscriber.equivalency);
+                        metrics.getRoamersByCountryAndSubscriberAllCountries(session, result.direction.equivalency, result.subscriber.equivalency, result.timePeriod);
                     }else{
-                        metrics.getRoamersByCountryAllCountries(session, result.direction.equivalency);
+                        metrics.getRoamersByCountryAllCountries(session, result.direction.equivalency, result.timePeriod);
                     }
                 }else{
                     if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
-                        metrics.getRoamersByCountryAndSubscriberBothDirectionsAllCountries(session, result.subscriber.equivalency);
+                        metrics.getRoamersByCountryAndSubscriberBothDirectionsAllCountries(session, result.subscriber.equivalency, result.timePeriod);
                     }else{
-                        metrics.getRoamersByCountryBothDirectionsAllCountries(session);
+                        metrics.getRoamersByCountryBothDirectionsAllCountries(session, result.timePeriod);
                     }
                 }
             }
@@ -216,7 +254,7 @@ function setupDialogs(){
 
     dialog.onBegin(function (session, args, next) {
         database.getUser(session.message.user.id, function(dbUser){
-            console.log("Getted user:\n", dbUser);
+            console.log("=>Getted user:\n", dbUser,"\n");
             if(!dbUser){
                 dbUser={_id: session.message.user.id ,createdAt: new Date(), userName: session.message.user.name, authorized: false, welcomed: true};
                 database.users.insert(dbUser);
@@ -445,13 +483,41 @@ var luisUtil={
         callback && callback(null);return null;
     },
     parseDirection: function(sentence){
-        var directions=["inbound","outbound","in","out"];
-        var directionsEquivalency=["inbound","outbound","inbound","outbound"];
+        var directions=parse.directions;
+        var directionsEquivalency=parse.directionsEquivalency;
         console.log("Direction sentence: ",sentence);
         var parseDirection = builder.EntityRecognizer.findBestMatch(directions, sentence);
         console.log("Direction recognition: ", parseDirection);
         if(parseDirection && parseDirection.score){
             return {original: sentence, equivalency: directionsEquivalency[parseDirection.index]}
+        }
+        return null;
+    },
+    parseTimeQuantity: function(sentence){
+        if(!isNaN(sentence)){ //If is a number, return it
+            console.log("Quantity parsing, number: "+sentence);
+            return {original: sentence, equivalency: sentence};
+        }
+        var quantityDetected = builder.EntityRecognizer.findBestMatch(parse.quantity, sentence, 0.20);
+
+        if(quantityDetected && quantityDetected.score > 0 && quantityDetected.index>=0){
+            console.log("Quantity parsing, returned",{original: sentence, equivalency: parse.quantityEquivalency[quantityDetected.index]});
+            return {original: sentence, equivalency: parse.quantityEquivalency[quantityDetected.index]};
+        }
+
+        console.log("Quantity parsing, null");
+        return null;
+    },
+    parseTimePeriod: function(sentence){
+        var periodDetected = builder.EntityRecognizer.findBestMatch(parse.period, sentence, 0.20);
+
+        if(periodDetected && periodDetected.score > 0 && periodDetected.index>=0){
+            return {original: sentence, 
+                equivalency: parse.periodEquivalency[periodDetected.index], 
+                single:parse.periodSingle[periodDetected.index], 
+                plural: parse.periodPlural[periodDetected.index], 
+                toSingle: parse.period2Single[periodDetected.index], 
+                toPlural: parse.period2Plural[periodDetected.index]};
         }
         return null;
     }

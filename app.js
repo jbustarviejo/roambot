@@ -116,7 +116,7 @@ function setupDialogs(){
             console.log("Detected",args);
 
             var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
-            var subscriber= builder.EntityRecognizer.findAllEntity(args.entities, 'subscriber');
+            var subscriber= builder.EntityRecognizer.findEntity(args.entities, 'subscriber');
             var direction = builder.EntityRecognizer.findEntity(args.entities, 'direction');
 
             //Get country
@@ -131,21 +131,12 @@ function setupDialogs(){
                 var directionParsed = null;
             }
 
-            //Get Subscriber
+            //Subscriber TODO: By country
             if(subscriber && subscriber.entity){
-                if(country && country.entity && country.equivalency.entity){
-                    //If Country is easy to get subscriber
-                    subscriber.equivalency=luisUtil.parseSubscriber(subscriber.entity, country.equivalency, function(equivalency){
-                        subscriber.equivalency=equivalency;
-                        next({country: country, subscriber: subscriber, direction: directionParsed});
-                    });   
-                }else{
-                    subscriber.equivalency=luisUtil.parseSubscriber(subscriber.entity, null, function(equivalency){
-                        subscriber.equivalency=equivalency;
-                        next({country: country, subscriber: subscriber, direction: directionParsed});           
-                    }); 
-                }
+                subscriber.equivalency=luisUtil.parseSubscriber(subscriber.entity);
             }
+
+            next({country: country, subscriber: subscriber, direction: directionParsed});
         },
         function (session, result, next) {
             console.log("Args 2", result);
@@ -174,7 +165,7 @@ function setupDialogs(){
                     }
                 }else{
                     if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
-                        metrics.getRoamersByCountryAndSubscriberBothDirectionsAllCountries(session, result.direction.equivalency);
+                        metrics.getRoamersByCountryAndSubscriberBothDirectionsAllCountries(session, result.subscriber.equivalency);
                     }else{
                         metrics.getRoamersByCountryBothDirectionsAllCountries(session);
                     }
@@ -447,7 +438,7 @@ var luisUtil={
         console.log("subscriber recognition from all: ", sentence);
 
         if(subscriberDetected && subscriberDetected.score > 0 && subscriberDetected.index>=0){
-            var detected = {original: sentence, equivalency: parse.subscriberListEquivalency[subscriberDetected.index]};
+            var detected = {original: sentence, equivalency: parse.subscribersListEquivalency[subscriberDetected.index]};
             callback && callback(detected);return detected;
         }
 

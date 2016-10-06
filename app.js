@@ -20,7 +20,7 @@ var enableHttps=false;
 
 //Global vars
 var bot;
-var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=1f60a9df-c43f-4793-addc-d21140dd30bc&subscription-key=57964100a34f4d1aa3c5cd619690f610&q=');
+var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=430dee16-6b4a-411c-9ce2-f15305aff8fb&subscription-key=57964100a34f4d1aa3c5cd619690f610&q=');
 var dialog = new builder.IntentDialog({ recognizers: [recognizer] });
 
 console.log("=>RoamBot starting...");
@@ -113,113 +113,62 @@ function setupDialogs(){
 
     dialog.matches('roamersNumber', [
         function (session, args, next) {
-            console.log("=>Detected by Luis: \n",args,"\n");
-
-            var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
-            var subscriber= builder.EntityRecognizer.findEntity(args.entities, 'subscriber');
-            var direction = builder.EntityRecognizer.findEntity(args.entities, 'direction');
-            var quantity = builder.EntityRecognizer.findEntity(args.entities, 'time::quantity');
-            var period = builder.EntityRecognizer.findEntity(args.entities, 'time::period');
-
-            //Get country
-            if(country && country.entity){
-                country.equivalency=luisUtil.parseCountry(country.entity);
-            }
-
-            //inbound or outbound
-            if(direction && direction.entity){
-                var directionParsed = luisUtil.parseDirection(direction.entity);
-            }else{
-                var directionParsed = null;
-            }
-
-            //Subscriber TODO: By country
-            if(subscriber && subscriber.entity){
-                subscriber.equivalency=luisUtil.parseSubscriber(subscriber.entity);
-            }
-
-            var timePeriod = {};
-            timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * 24);
-            timePeriod.string = "las últimas 24 horas";
-
-            if(quantity && quantity.entity && period && period.entity){
-                console.log("Q y P");
-                quantity.equivalency=luisUtil.parseTimeQuantity(quantity.entity);
-                period.equivalency=luisUtil.parseTimePeriod(period.entity);
-
-                //Period type
-                if(period.equivalency && period.equivalency.equivalency){
-                    console.log("Pe1");
-                    if(quantity.equivalency && quantity.equivalency.equivalency){
-                        console.log("Qe1 y Pe1");
-                        timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * quantity.equivalency.equivalency * period.equivalency.equivalency);
-                        if(quantity.equivalency.equivalency==1){
-                            timePeriod.string = period.equivalency.single+" "+period.equivalency.toSingle;   
-                        }else{
-                            timePeriod.string = period.equivalency.plural+" "+quantity.equivalency.equivalency+" "+period.equivalency.toPlural;   
-                        }
-                    }else{
-                        console.log("Pe2");
-                        timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * 1 * period.equivalency.equivalency);
-                        timePeriod.string = period.equivalency.plural+" "+period.equivalency.toSingle;   
-                    }
-                }
-            }else if(period && period.entity){
-                console.log("P");
-                period.equivalency=luisUtil.parseTimePeriod(period.entity);
-                if(period.equivalency && period.equivalency.equivalency){
-                    console.log("Pe");
-                    timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * 1 * period.equivalency.equivalency);
-                    timePeriod.string = period.equivalency.toSingle+" "+period.equivalency.single;   
-                }
-            }
-
-            next({country: country, subscriber: subscriber, direction: directionParsed, timePeriod: timePeriod});
+            console.log("=>RN: Detected by Luis: \n",args,"\n");
+            
+            var result=luisUtil.getDataFromArgs(args);
+            next(result);
         },
         function (session, result, next) {
             console.log("=>Args received in l2\n", result,"\n");
 
-            if(result.country && result.country.equivalency && result.country.equivalency.equivalency){
-                countryEntity=result.country.equivalency;
-                if(result.direction && result.direction.equivalency){
-                    if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
-                        metrics.getRoamersByCountryAndSubscriber(session, countryEntity, result.direction.equivalency, result.subscriber.equivalency, result.timePeriod);
-                    }else{
-                        metrics.getRoamersByCountry(session, countryEntity, result.direction.equivalency, result.timePeriod);
-                    }
-                }else{
-                    if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
-                        metrics.getRoamersByCountryAndSubscriberBothDirections(session,countryEntity,result.subscriber.equivalency, result.timePeriod);
-                    }else{
-                        metrics.getRoamersByCountryBothDirections(session,countryEntity, result.timePeriod);
-                    }
-                }
-            }else{
-                if(result.direction && result.direction.equivalency){
-                    if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
-                        metrics.getRoamersByCountryAndSubscriberAllCountries(session, result.direction.equivalency, result.subscriber.equivalency, result.timePeriod);
-                    }else{
-                        metrics.getRoamersByCountryAllCountries(session, result.direction.equivalency, result.timePeriod);
-                    }
-                }else{
-                    if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
-                        metrics.getRoamersByCountryAndSubscriberBothDirectionsAllCountries(session, result.subscriber.equivalency, result.timePeriod);
-                    }else{
-                        metrics.getRoamersByCountryBothDirectionsAllCountries(session, result.timePeriod);
-                    }
-                }
-            }
+            luisUtil.createAnswerWithData(session, result, 1);
         },
     ]);
 
-    dialog.matches('roamersStatsNotEnoughData', [
+    dialog.matches('successRate', [
         function (session, args, next) {
-            var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
-            var time = builder.EntityRecognizer.findEntity(args.entities, 'time');
+            console.log("=>SR: Detected by Luis: \n",args,"\n");
 
-            var toReply="Vale, te digo lo que he pillado: \n-Métrica de roamers sin muchos datos (no sé algún dato fundamental para entenderlo). "+JSON.stringify(args);
-            console.log(args);
-            session.send(toReply); 
+            var result=luisUtil.getDataFromArgs(args);
+            next(result);
+        },
+        function (session, result, next) {
+            console.log("=>Args received in l2\n", result,"\n");
+
+            luisUtil.createAnswerWithData(session, result, 2);
+        },
+    ]);
+
+    dialog.matches('roamersStatsNoMetric', [
+        function (session, args, next) {
+            console.log("=>NoEnoughData: Detected by Luis: \n",args,"\n");
+
+            var result=luisUtil.getDataFromArgs(args);
+            session.send("No estoy seguro de la estadística que quieres");
+            builder.Prompts.choice(session, "¿Qué estadística buscas?", "Número de roamers|Tasa de éxito de registro de roamers");
+
+        }, function (session, args, next) {
+            console.log("=>Args received in l2\n", result,"\n");
+
+            if (result.response) {
+                switch(result.response.entity){
+                    case "Número de roamers":
+                    case 1:
+                         luisUtil.createAnswerWithData(session, result, 1);
+                    break;
+                    case "Tasa de éxito de registro de roamers":
+                    case 2:
+                         luisUtil.createAnswerWithData(session, result, 2);
+                    break;
+                    default:
+                        session.send("No te he entendido");
+                        session.endDialog();
+                    break;
+                }
+            } else {
+                session.send("No te he entendido");
+                session.endDialog();
+            }
         }
     ]);
 
@@ -340,7 +289,7 @@ function setupDialogs(){
                     break;
                     case 1:
                         session.send("¡Genial! Ese me vale");
-                        sendAlertByEmailToAdmin(emailEntered, session.userData.dbUser.userName);
+                        util.sendAlertByEmailToAdmin(emailEntered, session.userData.dbUser.userName);
                         session.send("Ahora a esperar... el administrador se pondrá en contacto contigo por tu email (time)");
                         session.userData.dbUser.email=emailEntered;
                         database.updateUser(session.userData.dbUser, function(){
@@ -392,39 +341,11 @@ function setupDialogs(){
             }
         }
     ]);
-
-    function sendAlertByEmailToAdmin(email, userName){
-        console.log("Generando email de alerta para ",email,userName);
-     
-        var transporter = nodemailer.createTransport({
-            service: 'Gmail',
-            auth: {
-                user: 'roambotgrtu@gmail.com',
-                pass: 'GRTU2016'
-            }
-        }, {
-        });
-
-        // setup e-mail data with unicode symbols 
-        var message = {
-            to: "j.bustarviejo@gmail.com", // list of receivers 
-            subject: 'Nuevo usuario para Roambot', // Subject line 
-            text: 'El usuario '+userName+" con email "+email+" espera confirmación", // plaintext body 
-            html: 'El usuario <b>'+userName+"</b> con email <b>"+email+"</b> espera confirmación" // html body 
-        };
-         
-       transporter.sendMail(message, function (error, info) {
-        if (error) {
-            console.log('Error occurred');
-            console.log(error.message);
-            return;
-        }
-        console.log('Message sent successfully!');
-        console.log('Server responded with "%s"', info.response);
-        });
-    };
-
 }
+
+//=========================================================
+// Util
+//=========================================================
 
 var util={
     getFirstName: function(userName){
@@ -445,18 +366,48 @@ var util={
             return -2;
         }
         return 1;
+    },
+    sendAlertByEmailToAdmin: function(email, userName){
+        console.log("Generando email de alerta para ",email,userName);
+     
+        var transporter = nodemailer.createTransport({
+            service: 'Gmail',
+            auth: {
+                user: 'roambotgrtu@gmail.com',
+                pass: 'GRTU2016'
+            }
+        },{
+        });
+
+        // setup e-mail data with unicode symbols 
+        var message = {
+            to: "j.bustarviejo@gmail.com", // list of receivers 
+            subject: 'Nuevo usuario para Roambot', // Subject line 
+            text: 'El usuario '+userName+" con email "+email+" espera confirmación", // plaintext body 
+            html: 'El usuario <b>'+userName+"</b> con email <b>"+email+"</b> espera confirmación" // html body 
+        };
+         
+       transporter.sendMail(message, function (error, info) {
+        if (error) {
+            console.log('Error occurred');
+            console.log(error.message);
+            return;
+        }
+        console.log('Message sent successfully!');
+        console.log('Server responded with "%s"', info.response);
+        });
     }
 };
 
 var luisUtil={
-    getElementInSentence: function(sentente, elementList){
+    /*getElementInSentence: function(sentente, elementList){
         for(var i=0; i<elementList.length; i++){
             if(elementList[i].startIndex>=sentente.startIndex && elementList[i].endIndex<=sentente.endIndex){
                 return elementList[i];
             }
         }
         return null;
-    },
+    },*/
     parseCountry: function(sentence){
         var countryDetected = builder.EntityRecognizer.findBestMatch(parse.countryList, sentence, 0.01);
         console.log("Country recognition: ",countryDetected);
@@ -520,5 +471,100 @@ var luisUtil={
                 toPlural: parse.period2Plural[periodDetected.index]};
         }
         return null;
+    },
+    getDataFromArgs: function(args){
+        var country = builder.EntityRecognizer.findEntity(args.entities, 'country');
+        var subscriber= builder.EntityRecognizer.findEntity(args.entities, 'subscriber');
+        var direction = builder.EntityRecognizer.findEntity(args.entities, 'direction');
+        var quantity = builder.EntityRecognizer.findEntity(args.entities, 'time::quantity');
+        var period = builder.EntityRecognizer.findEntity(args.entities, 'time::period');
+
+        //Get country
+        if(country && country.entity){
+            country.equivalency=luisUtil.parseCountry(country.entity);
+        }
+
+        //inbound or outbound
+        if(direction && direction.entity){
+            var directionParsed = luisUtil.parseDirection(direction.entity);
+        }else{
+            var directionParsed = null;
+        }
+
+        //Subscriber TODO: By country
+        if(subscriber && subscriber.entity){
+            subscriber.equivalency=luisUtil.parseSubscriber(subscriber.entity);
+        }
+
+        var timePeriod = {};
+        timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * 24);
+        timePeriod.string = "las últimas 24 horas";
+
+        if(quantity && quantity.entity && period && period.entity){
+            console.log("Q y P");
+            quantity.equivalency=luisUtil.parseTimeQuantity(quantity.entity);
+            period.equivalency=luisUtil.parseTimePeriod(period.entity);
+
+            //Period type
+            if(period.equivalency && period.equivalency.equivalency){
+                console.log("Pe2");
+                if(quantity.equivalency && quantity.equivalency.equivalency){
+                    console.log("Qe2 y Pe2");
+                    timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * quantity.equivalency.equivalency * period.equivalency.equivalency);
+                    if(quantity.equivalency.equivalency==1){
+                        timePeriod.string = period.equivalency.single+" "+period.equivalency.toSingle;   
+                    }else{
+                        timePeriod.string = period.equivalency.plural+" "+quantity.equivalency.equivalency+" "+period.equivalency.toPlural;   
+                    }
+                }else{
+                    console.log("Pe3");
+                    timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * 1 * period.equivalency.equivalency);
+                    timePeriod.string = period.equivalency.plural+" "+period.equivalency.toSingle;   
+                }
+            }
+        }else if(period && period.entity){
+            console.log("P");
+            period.equivalency=luisUtil.parseTimePeriod(period.entity);
+            if(period.equivalency && period.equivalency.equivalency){
+                console.log("Pe1");
+                timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * 1 * period.equivalency.equivalency);
+                timePeriod.string = period.equivalency.toSingle+" "+period.equivalency.single;   
+            }
+        }
+
+        return {country: country, subscriber: subscriber, direction: directionParsed, timePeriod: timePeriod};
+    },
+    createAnswerWithData: function(session, result, metricCode){
+        if(result.country && result.country.equivalency && result.country.equivalency.equivalency){
+            countryEntity=result.country.equivalency;
+            if(result.direction && result.direction.equivalency){
+                if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
+                    metrics.getRoamersByCountryAndSubscriber(session, metricCode, countryEntity, result.direction.equivalency, result.subscriber.equivalency, result.timePeriod);
+                }else{
+                    metrics.getRoamersByCountry(session, metricCode, countryEntity, result.direction.equivalency, result.timePeriod);
+                }
+            }else{
+                if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
+                    metrics.getRoamersByCountryAndSubscriberBothDirections(session, metricCode, countryEntity, result.subscriber.equivalency, result.timePeriod);
+                }else{
+                    metrics.getRoamersByCountryBothDirections(session, metricCode, countryEntity, result.timePeriod);
+                }
+            }
+        }else{
+            if(result.direction && result.direction.equivalency){
+                if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
+                    metrics.getRoamersByCountryAndSubscriberAllCountries(session, metricCode, result.direction.equivalency, result.subscriber.equivalency, result.timePeriod);
+                }else{
+                    metrics.getRoamersByCountryAllCountries(session, metricCode, result.direction.equivalency, result.timePeriod);
+                }
+            }else{
+                if(result.subscriber && result.subscriber.equivalency && result.subscriber.equivalency.equivalency){
+                    metrics.getRoamersByCountryAndSubscriberBothDirectionsAllCountries(session, metricCode, result.subscriber.equivalency, result.timePeriod);
+                }else{
+                    metrics.getRoamersByCountryBothDirectionsAllCountries(session, metricCode, result.timePeriod);
+                }
+            }
+        }
+        session.endDialog();
     }
 };

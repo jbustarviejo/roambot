@@ -9,7 +9,7 @@ var subscriberList=parse.subscribersListBasic;
 var utterances=luisConfig.defaultUtterances;
 
 
-function writeEntityUtterance(offsetText, country, doubleCheck, entityName){
+function writeEntityUtterance(offsetText, country, doubleCheck, entityName, intent){
 	var countrySplit = country.replace(" ("," ( ").replace(")"," ) ").replace("-"," - ").replace("&"," & ").replace("  "," ").trim().split(/[\s,]+/);
 	var offsetSplitLength = 0;
 	var startPos = 0;
@@ -21,7 +21,7 @@ function writeEntityUtterance(offsetText, country, doubleCheck, entityName){
 
 	var utterance = {
       "text": offsetText+country,
-      "intent": "roamersNumber",
+      "intent": intent,
       "entities": [
         {
           "entity": entityName,
@@ -37,7 +37,7 @@ function writeEntityUtterance(offsetText, country, doubleCheck, entityName){
 	    if(countryNoDiacritics!==countryList[i]){
 	    	var utterance2 = {
 		      "text": countryNoDiacritics,
-		      "intent": "roamersNumber",
+		      "intent": intent,
 		      "entities": [
 		        {
 		          "entity": entityName,
@@ -51,7 +51,7 @@ function writeEntityUtterance(offsetText, country, doubleCheck, entityName){
     }
 }
 
-function writeEntityUtteranceWithDirection(offsetText, country, keywordPosition, offsetEnd, entityName){
+function writeEntityUtteranceWithDirection(offsetText, country, keywordPosition, offsetEnd, entityName, intent){
 	var countrySplit = country.replace(" ("," ( ").replace(")"," ) ").replace("-"," - ").replace("&"," & ").replace("  "," ").trim().split(/[\s,]+/);
 	var offsetSplitLength = 0;
 	var startPos = 0;
@@ -67,7 +67,7 @@ function writeEntityUtteranceWithDirection(offsetText, country, keywordPosition,
 
 	var utterance = {
       "text": offsetText+country+offsetEnd,
-      "intent": "roamersNumber",
+      "intent": intent,
       "entities": [
         {
           "entity": entityName,
@@ -87,7 +87,7 @@ function writeEntityUtteranceWithDirection(offsetText, country, keywordPosition,
     if(countryNoDiacritics!==countryList[i]){
     	var utterance2 = {
 	      "text": countryNoDiacritics,
-	      "intent": "roamersNumber",
+	      "intent": intent,
 	      "entities": [
 	        {
 	          "entity": entityName,
@@ -111,22 +111,37 @@ function writeEntityUtteranceWithDirection(offsetText, country, keywordPosition,
 
 //Only countries (Full)
 for(var i=0;i<countryListFull.length;i++){
-	writeEntityUtterance("",countryListFull[i],true, "country");
+	writeEntityUtterance("",countryListFull[i],true, "country", "roamersStatsNoMetric");
 }
 
 //Roamers de {country}
 for(var i=0;i<countryList.length;i++){
-	writeEntityUtterance("Roamers de ",countryList[i], false, "country");
+	writeEntityUtterance("Roamers de ",countryList[i], false, "country", "roamersNumber");
 }
 
 //Roamers {country}
 for(var i=0;i<countryList.length;i++){
-	writeEntityUtterance("Roamers ",countryList[i], false, "country");
+	writeEntityUtterance("Roamers ",countryList[i], false, "country", "roamersNumber");
 }
 
 //Número de roamers de {country}
 for(var i=0;i<countryList.length;i++){
-    writeEntityUtterance("Número de roamers de ",countryList[i], false, "country");
+    writeEntityUtterance("Número de roamers de ",countryList[i], false, "country", "roamersNumber");
+}
+
+//Tasa de registro de {country}
+for(var i=0;i<countryList.length;i++){
+    writeEntityUtterance("Tasa de registro de ",countryList[i], false, "country", "successRate");
+}
+
+//Porcentaje de countryList de {country}
+for(var i=0;i<subscriberList.length;i++){
+    writeEntityUtterance("Porcentaje de éxito de ",countryList[i], false, "country", "successRate");
+}
+
+//Registro de {country}
+for(var i=0;i<countryList.length;i++){
+    writeEntityUtterance("Registro de ",countryList[i], false, "country", "successRate");
 }
 
 //=========================================================
@@ -135,22 +150,37 @@ for(var i=0;i<countryList.length;i++){
 
 //Only countries (Full)
 for(var i=0;i<subscribersListFull.length;i++){
-	writeEntityUtterance("",subscribersListFull[i],true, "subscriber");
+	writeEntityUtterance("",subscribersListFull[i],true, "subscriber", "roamersStatsNoMetric");
 }
 
 //Roamers de {subscriber}
 for(var i=0;i<subscriberList.length;i++){
-	writeEntityUtterance("Roamers de ",subscriberList[i], false, "subscriber");
+	writeEntityUtterance("Roamers de ",subscriberList[i], false, "subscriber", "roamersNumber");
 }
 
 //Roamers {subscriber}
 for(var i=0;i<subscriberList.length;i++){
-	writeEntityUtterance("Roamers ",subscriberList[i], false, "subscriber");
+	writeEntityUtterance("Roamers ",subscriberList[i], false, "subscriber", "roamersNumber");
 }
 
 //Número de roamers de {subscriber}
 for(var i=0;i<subscriberList.length;i++){
-    writeEntityUtterance("Número de roamers de ",subscriberList[i], false, "subscriber");
+    writeEntityUtterance("Número de roamers de ",subscriberList[i], false, "subscriber", "roamersNumber");
+}
+
+//Tasa de registro de {subscriber}
+for(var i=0;i<subscriberList.length;i++){
+    writeEntityUtterance("Tasa de registro de ",subscriberList[i], false, "subscriber", "successRate");
+}
+
+//Porcentaje de éxito de {subscriber}
+for(var i=0;i<subscriberList.length;i++){
+    writeEntityUtterance("Porcentaje de éxito de ",subscriberList[i], false, "subscriber", "successRate");
+}
+
+//Registro de {subscriber}
+for(var i=0;i<subscriberList.length;i++){
+    writeEntityUtterance("Registro de ",subscriberList[i], false, "subscriber", "successRate");
 }
 
 //=========================================================
@@ -160,61 +190,69 @@ for(var i=0;i<subscriberList.length;i++){
 //At start
 
 for(var i=0;i<countryList.length;i++){
-	writeEntityUtteranceWithDirection("inbound de ",countryList[i],0,"", "country");
+	writeEntityUtteranceWithDirection("inbound de ",countryList[i],0,"", "country", "roamersNumber");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeEntityUtteranceWithDirection("outbound de ",countryList[i],0,"", "country");
+	writeEntityUtteranceWithDirection("outbound de ",countryList[i],0,"", "country", "roamersNumber");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeEntityUtteranceWithDirection("Roamers inbound de ",countryList[i],1,"", "country");
+	writeEntityUtteranceWithDirection("Roamers inbound de ",countryList[i],1,"", "country", "roamersNumber");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeEntityUtteranceWithDirection("Roamers outbound de ",countryList[i],1,"", "country");
+	writeEntityUtteranceWithDirection("Roamers outbound de ",countryList[i],1,"", "country", "roamersNumber");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeEntityUtteranceWithDirection("Roamers inbound ",countryList[i],1,"", "country");
+	writeEntityUtteranceWithDirection("Roamers inbound ",countryList[i],1,"", "country", "roamersNumber");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeEntityUtteranceWithDirection("Roamers outbound ",countryList[i],1,"", "country");
+	writeEntityUtteranceWithDirection("Roamers outbound ",countryList[i],1,"", "country", "roamersNumber");
 }
 
 for(var i=0;i<countryList.length;i++){
-    writeEntityUtteranceWithDirection("Número de roamers inbound de ",countryList[i],3,"", "country");
+	writeEntityUtteranceWithDirection("Registro outbound ",countryList[i],1,"", "country", "successRate");
 }
 
 for(var i=0;i<countryList.length;i++){
-    writeEntityUtteranceWithDirection("Número de roamers outbound de ",countryList[i],3,"", "country");
+    writeEntityUtteranceWithDirection("Número de roamers inbound de ",countryList[i],3,"", "country", "roamersNumber");
+}
+
+for(var i=0;i<countryList.length;i++){
+    writeEntityUtteranceWithDirection("Número de roamers outbound de ",countryList[i],3,"", "country", "roamersNumber");
 }
 
 //At end
 
 for(var i=0;i<countryList.length;i++){
-	writeEntityUtteranceWithDirection("",countryList[i],-1, " inbound", "country");
+	writeEntityUtteranceWithDirection("",countryList[i],-1, " inbound", "country", "roamersNumber");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeEntityUtteranceWithDirection("",countryList[i],-1, " outbound", "country");
+	writeEntityUtteranceWithDirection("",countryList[i],-1, " outbound", "country", "roamersNumber");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeEntityUtteranceWithDirection("Roamers de ",countryList[i],-1," inbound", "country");
+	writeEntityUtteranceWithDirection("Roamers de ",countryList[i],-1," inbound", "country", "roamersNumber");
 }
 
 for(var i=0;i<countryList.length;i++){
-	writeEntityUtteranceWithDirection("Roamers de ",countryList[i],-1," outbound", "country");
+	writeEntityUtteranceWithDirection("Tasa de registro de ",countryList[i],-1," inbound", "country", "successRate");
 }
 
 for(var i=0;i<countryList.length;i++){
-    writeEntityUtteranceWithDirection("Número de roamers de ",countryList[i],-1, " inbound", "country");
+	writeEntityUtteranceWithDirection("Roamers de ",countryList[i],-1," outbound", "country", "roamersNumber");
 }
 
 for(var i=0;i<countryList.length;i++){
-    writeEntityUtteranceWithDirection("Número de roamers de ",countryList[i],-1, " outbound", "country");
+    writeEntityUtteranceWithDirection("Número de roamers de ",countryList[i],-1, " inbound", "country", "roamersNumber");
+}
+
+for(var i=0;i<countryList.length;i++){
+    writeEntityUtteranceWithDirection("Número de roamers de ",countryList[i],-1, " outbound", "country", "roamersNumber");
 }
 
 //=========================================================
@@ -224,61 +262,77 @@ for(var i=0;i<countryList.length;i++){
 //At start
 
 for(var i=0;i<subscriberList.length;i++){
-	writeEntityUtteranceWithDirection("inbound de ",subscriberList[i],0,"", "subscriber");
+	writeEntityUtteranceWithDirection("inbound de ",subscriberList[i],0,"", "subscriber", "roamersNumber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeEntityUtteranceWithDirection("outbound de ",subscriberList[i],0,"", "subscriber");
+	writeEntityUtteranceWithDirection("Porcentaje de éxito de ",subscriberList[i],0,"", "subscriber", "successRate");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeEntityUtteranceWithDirection("Roamers inbound de ",subscriberList[i],1,"", "subscriber");
+	writeEntityUtteranceWithDirection("outbound de ",subscriberList[i],0,"", "subscriber", "roamersNumber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeEntityUtteranceWithDirection("Roamers outbound de ",subscriberList[i],1,"", "subscriber");
+	writeEntityUtteranceWithDirection("Roamers inbound de ",subscriberList[i],1,"", "subscriber", "roamersNumber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeEntityUtteranceWithDirection("Roamers inbound ",subscriberList[i],1,"", "subscriber");
+	writeEntityUtteranceWithDirection("Roamers outbound de ",subscriberList[i],1,"", "subscriber", "roamersNumber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeEntityUtteranceWithDirection("Roamers outbound ",subscriberList[i],1,"", "subscriber");
+	writeEntityUtteranceWithDirection("Roamers inbound ",subscriberList[i],1,"", "subscriber", "roamersNumber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-    writeEntityUtteranceWithDirection("Número de roamers inbound de ",subscriberList[i],3,"", "subscriber");
+	writeEntityUtteranceWithDirection("Roamers outbound ",subscriberList[i],1,"", "subscriber", "roamersNumber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-    writeEntityUtteranceWithDirection("Número de roamers outbound de ",subscriberList[i],3,"", "subscriber");
+    writeEntityUtteranceWithDirection("Número de roamers inbound de ",subscriberList[i],3,"", "subscriber", "roamersNumber");
+}
+
+for(var i=0;i<subscriberList.length;i++){
+    writeEntityUtteranceWithDirection("Número de roamers outbound de ",subscriberList[i],3,"", "subscriber", "roamersNumber");
+}
+
+for(var i=0;i<subscriberList.length;i++){
+    writeEntityUtteranceWithDirection("Porcentaje de registro de outbound de ",subscriberList[i],4,"", "subscriber", "successRate");
 }
 
 //At end
 
 for(var i=0;i<subscriberList.length;i++){
-	writeEntityUtteranceWithDirection("",subscriberList[i],-1, " inbound", "subscriber");
+	writeEntityUtteranceWithDirection("",subscriberList[i],-1, " inbound", "subscriber", "roamersNumber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeEntityUtteranceWithDirection("",subscriberList[i],-1, " outbound", "subscriber");
+	writeEntityUtteranceWithDirection("",subscriberList[i],-1, " outbound", "subscriber", "roamersNumber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeEntityUtteranceWithDirection("Roamers de ",subscriberList[i],-1," inbound", "subscriber");
+	writeEntityUtteranceWithDirection("Roamers de ",subscriberList[i],-1," inbound", "subscriber", "roamersNumber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-	writeEntityUtteranceWithDirection("Roamers de ",subscriberList[i],-1," outbound", "subscriber");
+	writeEntityUtteranceWithDirection("Porcentaje de registro de ",subscriberList[i],-1," inbound", "subscriber", "successRate");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-    writeEntityUtteranceWithDirection("Número de roamers de ",subscriberList[i],-1, " inbound", "subscriber");
+	writeEntityUtteranceWithDirection("Roamers de ",subscriberList[i],-1," outbound", "subscriber", "roamersNumber");
 }
 
 for(var i=0;i<subscriberList.length;i++){
-    writeEntityUtteranceWithDirection("Número de roamers de ",subscriberList[i],-1, " outbound", "subscriber");
+    writeEntityUtteranceWithDirection("Número de roamers de ",subscriberList[i],-1, " inbound", "subscriber", "roamersNumber");
+}
+
+for(var i=0;i<subscriberList.length;i++){
+    writeEntityUtteranceWithDirection("Número de roamers de ",subscriberList[i],-1, " outbound", "subscriber", "roamersNumber");
+}
+
+for(var i=0;i<subscriberList.length;i++){
+    writeEntityUtteranceWithDirection("Tasa de registro de ",subscriberList[i],-1, " outbound", "subscriber", "successRate");
 }
 
 //=========================================================

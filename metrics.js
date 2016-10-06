@@ -7,137 +7,175 @@ module.exports = {
 	getRoamersByCountryAllCountries(session, metricCode, direction, timeToApply){
 		var self=this;
 
-		console.log("Direction for report",direction);
+		var callbackFuntion=function(err, docs){
+			var successes=0;
+			var attemps=0;
 
-		var successes=0;
-		var attemps=0;
+			if (docs && docs.length>0){
+	            for (var i = 0; i < docs.length; i++) {
+	            	successes+=docs[i].successes;
+	            	attemps+=docs[i].sumTransactions;
+	            }
+	        }
+	        switch(metricCode){
+	        	case 1:
+	        	default:
+	 				if(successes>0){
+						session.send("En total, el número de roamers de Perú en %s en %s para todos los países es de %s", direction, timeToApply.string, self.numberWithDots(successes));
+			        }else{
+						session.send("No tengo roamers de Perú en %s en %s...", direction, timeToApply.string);
+			        }
+	        	break;
+	        	case 2:
+	        		if(attemps>0){
+						session.send("La tasa de éxito de registro de los roamers de Perú en %s en %s para todos los países es de %s", timeToApply.string, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
+			        }else{
+						session.send("No tengo roamers de Perú en %s en %s...", direction, timeToApply.string);
+			        }
+	        	break;
+	        }
+	        session.endDialog();
+		}
+
+		var query = {dataDate: {$gt: timeToApply.since}};
+		var filter = {successes: 1, sumTransactions:1};
 
 		if(direction=="inbound"){
-			self.database.reportsDataInbound.find({dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
-
-		        if (docs && docs.length>0){
-		            for (var i = 0; i < docs.length; i++) {
-		            	successes+=docs[i].successes;
-		            	attemps+=doc[i].sumTransactions;
-		            }
-		        }
-
-		        switch(metricCode){
-		        	case 1:
-		        	default:
-		 				if(successes>0){
-							session.send("En total, el número de roamers de Perú en inbound en %s para todos los países es de %s", timeToApply.string, self.numberWithDots(successes));
-				        }else{
-							session.send("No tengo roamers de Perú en inbound en %s...", timeToApply.string);
-				        }
-		        	break;
-		        	case 2:
-		        		if(attemps>0){
-							session.send("La tasa de éxito de registro de los roamers de Perú en inbound en %s para todos los países es de %s", timeToApply.string, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
-				        }else{
-							session.send("No tengo roamers de Perú en inbound en %s...", timeToApply.string);
-				        }
-		        	break;
-		        }
-		        session.endDialog();
-		    });
+			self.database.reportsDataInbound.find(query, filter).toArray(callbackFuntion);
 		}else{
-			self.database.reportsDataOutbound.find({dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
-
-		        if (docs && docs.length>0){
-		            for (var i = 0; i < docs.length; i++) {
-		            	successes+=docs[i].successes;
-		            	attemps+=doc[i].sumTransactions;
-		            }
-		        }
-
-		        switch(metricCode){
-		        	case 1:
-		        	default:
-		 				if(successes>0){
-							session.send("En total, el número de roamers de Perú en outbound en %s para todos los países es de %s", timeToApply.string, self.numberWithDots(successes));
-				        }else{
-							session.send("No tengo roamers de Perú en outbound en %s...", timeToApply.string);
-				        }
-		        	break;
-		        	case 2:
-		        		if(attemps>0){
-							session.send("La tasa de éxito de registro de los roamers de Perú en outbound en %s para todos los países es de %s", timeToApply.string, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
-				        }else{
-							session.send("No tengo roamers de Perú en outbound en %s...", timeToApply.string);
-				        }
-		        	break;
-		        }
-		        session.endDialog();
-		    });
+			self.database.reportsDataOutbound.find(query, filter).toArray(callbackFuntion);
 		}
 	},
 	getRoamersByCountryAndSubscriberAllCountries(session, metricCode, direction, subscriber, timeToApply){
 		var self=this;
 
-		console.log("Direction for report",direction);
+		var callbackFuntion=function(err, docs){
+			var successes=0;
+			var attemps=0;
 
-		var successes=0;
-		var attemps=0;
+			if (docs && docs.length>0){
+	            for (var i = 0; i < docs.length; i++) {
+	            	successes+=docs[i].successes;
+	            	attemps+=docs[i].sumTransactions;
+	            }
+	        }
+
+        	switch(metricCode){
+	        	case 1:
+	        	default:
+	 				 if(successes>0){
+						session.send("En total, el número de roamers de Perú en %s en %s para la operadora %s es de %s", direction, timeToApply.string, subscriber.equivalency, self.numberWithDots(successes));
+			        }else{
+						session.send("No tengo roamers de Perú %s para la operadora %s en %s...", direction, subscriber.equivalency, timeToApply.string);
+			        }
+	        	break;
+	        	case 2:
+	        		if(attemps>0){
+	        			session.send("La tasa de éxito de registro de los roamers de Perú en %s en %s para la operadora %s es de %s", direction, timeToApply.string, subscriber.equivalency, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
+			        }else{
+						session.send("No tengo roamers de Perú en %s para la operadora %s en %s...", direction, subscriber.equivalency, timeToApply.string);
+			        }
+	        	break;
+	        }
+	        session.endDialog();
+		}
+
+		var queryIn = {originOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}};
+		var queryOut = {subscriberOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}};
+		var filter = {successes: 1, sumTransactions:1};
 
 		if(direction=="inbound"){
-			self.database.reportsDataInbound.find({originOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
-
-		        if (docs && docs.length>0){
-		            for (var i = 0; i < docs.length; i++) {
-		            	successes+=docs[i].successes;
-		            	attemps+=doc[i].sumTransactions;
-		            }
-		        }
-
-	        	switch(metricCode){
-		        	case 1:
-		        	default:
-		 				 if(successes>0){
-							session.send("En total, el número de roamers de Perú en inbound en %s para la operadora %s es de %s", timeToApply.string, subscriber.equivalency, self.numberWithDots(successes));
-				        }else{
-							session.send("No tengo roamers de Perú inbound para la operadora %s en %s...", subscriber.equivalency, timeToApply.string);
-				        }
-		        	break;
-		        	case 2:
-		        		if(attemps>0){
-		        			session.send("La tasa de éxito de registro de los roamers de Perú en inbound en %s para la operadora %s es de %s", timeToApply.string, subscriber.equivalency, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
-				        }else{
-							session.send("No tengo roamers de Perú en inbound para la operadora %s en %s...", subscriber.equivalency, timeToApply.string);
-				        }
-		        	break;
-		        }
-		        session.endDialog();
-		    });
+			self.database.reportsDataInbound.find(queryIn, filter).toArray(callbackFuntion);
 		}else{
-			self.database.reportsDataOutbound.find({subscriberOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
+			self.database.reportsDataOutbound.find(queryOut, filter).toArray(callbackFuntion);
+		}
+	},
+	getRoamersByCountry(session, metricCode, country, direction, timeToApply){
+		var self=this;
 
-		        if (docs && docs.length>0){
-		            for (var i = 0; i < docs.length; i++) {
-		            	successes+=docs[i].successes;
-		            	attemps+=doc[i].sumTransactions;
-		            }
-		        }
+		var callbackFuntion=function(err, docs){
+			var successes=0;
+			var attemps=0;
 
-		        switch(metricCode){
-		        	case 1:
-		        	default:
-		 				 if(successes>0){
-							session.send("En total, el número de roamers de Perú en outbound en %s para la operadora %s es de %s", timeToApply.string, subscriber.equivalency, self.numberWithDots(successes));
-				        }else{
-							session.send("No tengo roamers de Perú outbound para la operadora %s en %s...", subscriber.equivalency, timeToApply.string);
-				        }
-		        	break;
-		        	case 2:
-		        		if(attemps>0){
-		        			session.send("La tasa de éxito de registro de los roamers de Perú en outbound en %s para la operadora %s es de %s", timeToApply.string, subscriber.equivalency, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
-				        }else{
-							session.send("No tengo roamers de Perú en outbound para la operadora %s en %s...", subscriber.equivalency, timeToApply.string);
-				        }
-		        	break;
-		        }
-		        session.endDialog();
-		    });
+			if (docs && docs.length>0){
+	            for (var i = 0; i < docs.length; i++) {
+	            	successes+=docs[i].successes;
+	            	attemps+=docs[i].sumTransactions;
+	            }
+	        }
+
+			switch(metricCode){
+	        	case 1:
+	        	default:
+			        if(successes>0){
+						session.send("En total, el número de roamers de Perú en %s para %s en %s es de %s", direction, country.spanish, timeToApply.string, self.numberWithDots(successes));
+			        }else{
+						session.send("No tengo roamers de Perú en %s para %s en %s", direction, country.spanish, timeToApply.string);
+			        }
+	        	break;
+	        	case 2:
+	        		if(attemps>0){
+	        			session.send("La tasa de éxito de registro de los roamers de Perú en %s para %s en %s es de %s", direction, country.spanish, timeToApply.string, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
+			        }else{
+						session.send("No tengo roamers de Perú en %s para %s en %s", direction, country.spanish, timeToApply.string);
+			        }
+	        	break;
+	        }
+	        session.endDialog();
+		}
+
+		var queryIn = {originCountry: country.equivalency, dataDate: {$gt: timeToApply.since}};
+		var queryOut= {subscriberCountryName: country.equivalency, dataDate: {$gt: timeToApply.since}};
+		var filter = {successes: 1, sumTransactions:1};
+
+		if(direction=="inbound"){
+			self.database.reportsDataInbound.find(queryIn, filter).toArray(callbackFuntion);
+		}else{
+			self.database.reportsDataOutbound.find(queryOut, filter).toArray(callbackFuntion);
+		}
+	},
+	getRoamersByCountryAndSubscriber(session, metricCode, country, direction, subscriber, timeToApply){
+		var self=this;
+
+		var callbackFuntion=function(err, docs){
+			var successes=0;
+			var attemps=0;
+
+			if (docs && docs.length>0){
+	            for (var i = 0; i < docs.length; i++) {
+	            	successes+=docs[i].successes;
+	            	attemps+=docs[i].sumTransactions;
+	            }
+	        }
+
+	        switch(metricCode){
+	        	case 1:
+	        	default:
+			        if(successes>0){
+						session.send("En total, el número de roamers de Perú en %s de %s para %s en %s es de %s", direction, subscriber.equivalency, country.spanish, timeToApply.string, self.numberWithDots(successes));
+			        }else{
+						session.send("No tengo roamers de Perú en %s de %s para %s en %s", direction, subscriber.equivalency, country.spanish, timeToApply.string);
+			        }
+	        	break;
+	        	case 2:
+	        		if(attemps>0){
+	        			session.send("La tasa de éxito de registro de los roamers de Perú en %s de %s para %s en %s es de %s", direction, subscriber.equivalency, country.spanish, timeToApply.string, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
+			        }else{
+						session.send("No tengo roamers de Perú en %s para %s en %s", direction, country.spanish, timeToApply.string);
+			        }
+	        	break;
+	        }
+	        session.endDialog();
+		}
+
+		var queryIn = {originCountry: country.equivalency, originOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}};
+		var queryOut = {subscriberCountryName: country.equivalency, subscriberOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}};
+		var filter = {successes: 1, sumTransactions:1};
+
+		if(direction=="inbound"){
+			self.database.reportsDataInbound.find(queryIn, filter).toArray(callbackFuntion);
+		}else{
+			self.database.reportsDataOutbound.find(queryOut, filter).toArray(callbackFuntion);
 		}
 	},
 	getRoamersByCountryBothDirectionsAllCountries(session, metricCode, timeToApply){
@@ -148,7 +186,11 @@ module.exports = {
 		var outboundAttemps=0;
 		var inboundAttemps=0;
 
-		self.database.reportsDataOutbound.find({dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
+		var queryIn = {dataDate: {$gt: timeToApply.since}};
+		var queryOut = {dataDate: {$gt: timeToApply.since}};
+		var filter = {successes: 1, sumTransactions:1};
+
+		self.database.reportsDataOutbound.find(queryIn, filter).toArray(function(err, docs){
 	        if (docs && docs.length>0){
 	            for (var i = 0; i < docs.length; i++) {
             		outboundTransactions+=docs[i].successes;
@@ -156,7 +198,7 @@ module.exports = {
            		} 	
             }
 
-            self.database.reportsDataInbound.find({dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
+            self.database.reportsDataInbound.find(queryOut, filter).toArray(function(err, docs){
 		        if (docs && docs.length>0){
 		            for (var i = 0; i < docs.length; i++) {
 		            	inboundTransactions+=docs[i].successes;
@@ -196,14 +238,18 @@ module.exports = {
 		var outboundAttemps=0;
 		var inboundAttemps=0;
 
-		self.database.reportsDataOutbound.find({subscriberOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
+		var queryOut = {subscriberOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}};
+		var queryIn = {originOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}};
+		var filter = {successes: 1, sumTransactions:1};
+
+		self.database.reportsDataOutbound.find(queryOut, filter).toArray(function(err, docs){
 	        if (docs && docs.length>0){
 	            for (var i = 0; i < docs.length; i++) {
             		outboundTransactions+=docs[i].successes;
             		outboundAttemps+=docs[i].sumTransactions;
            		} 	
             }
-            self.database.reportsDataInbound.find({originOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
+            self.database.reportsDataInbound.find(queryIn, filter).toArray(function(err, docs){
 		        if (docs && docs.length>0){
 		            for (var i = 0; i < docs.length; i++) {
 		            	inboundTransactions+=docs[i].successes;
@@ -242,9 +288,11 @@ module.exports = {
 		var outboundAttemps=0;
 		var inboundAttemps=0;
 
-		console.log("Country: ",country, "executed query:",{subscriberCountryName: country.equivalency});
+		var queryOut = {subscriberCountryName: country.equivalency, dataDate: {$gt: timeToApply.since}};
+		var queryIn = {originCountry: country.equivalency, dataDate: {$gt: timeToApply.since}};
+		var filter = {successes: 1, sumTransactions:1};
 
-		self.database.reportsDataOutbound.find({subscriberCountryName: country.equivalency, dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
+		self.database.reportsDataOutbound.find(queryOut, filter).toArray(function(err, docs){
 	        if (docs && docs.length>0){
 	            for (var i = 0; i < docs.length; i++) {
             		outboundTransactions+=docs[i].successes;
@@ -252,7 +300,7 @@ module.exports = {
            		} 	
             }
 
-            self.database.reportsDataInbound.find({originCountry: country.equivalency, dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
+            self.database.reportsDataInbound.find(queryIn, filter).toArray(function(err, docs){
 		        if (docs && docs.length>0){
 		            for (var i = 0; i < docs.length; i++) {
 		            	inboundTransactions+=docs[i].successes;
@@ -291,9 +339,11 @@ module.exports = {
 		var outboundAttemps=0;
 		var inboundAttemps=0;
 
-		console.log("Country: "+country);
+		var queryIn = {originCountry: country.equivalency, originOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}};
+		var queryOut = {subscriberCountryName: country.equivalency, subscriberOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}};
+		var filter = {successes: 1, sumTransactions:1};
 
-		self.database.reportsDataOutbound.find({subscriberCountryName: country.equivalency, subscriberOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
+		self.database.reportsDataOutbound.find(queryOut, filter).toArray(function(err, docs){
 	        if (docs && docs.length>0){
 	            for (var i = 0; i < docs.length; i++) {
             		outboundTransactions+=docs[i].successes;
@@ -301,7 +351,7 @@ module.exports = {
            		} 	
             }
 
-            self.database.reportsDataInbound.find({originCountry: country.equivalency, originOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
+            self.database.reportsDataInbound.find(queryIn, filter).toArray(function(err, docs){
 
 		        if (docs && docs.length>0){
 		            for (var i = 0; i < docs.length; i++) {
@@ -333,140 +383,6 @@ module.exports = {
 		        session.endDialog();
 		    });
 	    });
-	},
-	getRoamersByCountry(session, metricCode, country, direction, timeToApply){
-		var self=this;
-
-		var successes=0;
-		var attemps=0;
-
-		if(direction=="inbound"){
-			self.database.reportsDataInbound.find({originCountry: country.equivalency, dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
-				console.log(err,docs);
-
-		        if (docs && docs.length>0){
-		            for (var i = 0; i < docs.length; i++) {
-		            	successes+=docs[i].successes;
-		            	attemps+=doc[i].sumTransactions;
-		            }
-		        }
-
-				switch(metricCode){
-		        	case 1:
-		        	default:
-				        if(successes>0){
-							session.send("En total, el número de roamers de Perú en inbound para %s en %s es de %s", country.spanish, timeToApply.string, self.numberWithDots(successes));
-				        }else{
-							session.send("No tengo roamers de Perú en inbound para %s en %s", country.spanish, timeToApply.string);
-				        }
-		        	break;
-		        	case 2:
-		        		if(attemps>0){
-		        			session.send("La tasa de éxito de registro de los roamers de Perú en inbound para %s en %s es de %s", country.spanish, timeToApply.string, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
-				        }else{
-							session.send("No tengo roamers de Perú en inbound para %s en %s", country.spanish, timeToApply.string);
-				        }
-		        	break;
-		        }
-		        session.endDialog();
-		    });
-		}else{
-			self.database.reportsDataOutbound.find({subscriberCountryName: country.equivalency, dataDate: {$gt: timeToApply.since}},{successes: 1}).toArray(function(err, docs){
-
-		        if (docs && docs.length>0){
-		            for (var i = 0; i < docs.length; i++) {
-		            	successes+=docs[i].successes;
-		            	attemps+=doc[i].sumTransactions;
-		            }
-		        }
-
-		        switch(metricCode){
-		        	case 1:
-		        	default:
-				        if(successes>0){
-							session.send("En total, el número de roamers de Perú en outbound para %s en %s es de %s", country.spanish, timeToApply.string, self.numberWithDots(successes));
-				        }else{
-							session.send("No tengo roamers de Perú en outbound para %s en %s", country.spanish, timeToApply.string);
-				        }
-		        	break;
-		        	case 2:
-		        		if(attemps>0){
-		        			session.send("La tasa de éxito de registro de los roamers de Perú en outbound para %s en %s es de %s", country.spanish, timeToApply.string, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
-				        }else{
-							session.send("No tengo roamers de Perú en outbound para %s en %s", country.spanish, timeToApply.string);
-				        }
-		        	break;
-		        }
-		        session.endDialog();
-		    });
-		}
-	},
-	getRoamersByCountryAndSubscriber(session, metricCode, country, direction, subscriber, timeToApply){
-		var self=this;
-
-		var successes=0;
-		var attemps=0;
-
-		if(direction=="inbound"){
-			self.database.reportsDataInbound.find({originCountry: country.equivalency, originOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
-				console.log(err,docs);
-
-		        if (docs && docs.length>0){
-		            for (var i = 0; i < docs.length; i++) {
-		            	successes+=docs[i].successes;
-		            	attemps+=doc[i].sumTransactions;
-		            }
-		        }
-
-		        switch(metricCode){
-		        	case 1:
-		        	default:
-				        if(successes>0){
-							session.send("En total, el número de roamers de Perú en inbound de %s para %s en %s es de %s", subscriber.equivalency, country.spanish, timeToApply.string, self.numberWithDots(successes));
-				        }else{
-							session.send("No tengo roamers de Perú en inbound de %s para %s en %s", subscriber.equivalency, country.spanish, timeToApply.string);
-				        }
-		        	break;
-		        	case 2:
-		        		if(attemps>0){
-		        			session.send("La tasa de éxito de registro de los roamers de Perú en inbound de %s para %s en %s es de %s", subscriber.equivalency, country.spanish, timeToApply.string, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
-				        }else{
-							session.send("No tengo roamers de Perú en inbound para %s en %s", country.spanish, timeToApply.string);
-				        }
-		        	break;
-		        }
-		        session.endDialog();
-		    });
-		}else{
-			self.database.reportsDataOutbound.find({subscriberCountryName: country.equivalency, subscriberOperatorName: subscriber.equivalency, dataDate: {$gt: timeToApply.since}}, {successes: 1, sumTransactions:1}).toArray(function(err, docs){
-
-		        if (docs && docs.length>0){
-		            for (var i = 0; i < docs.length; i++) {
-		            	successes+=docs[i].successes;
-		            	attemps+=doc[i].sumTransactions;
-		            }
-		        }
-
-		        switch(metricCode){
-		        	case 1:
-		        	default:
-				        if(successes>0){
-							session.send("En total, el número de roamers de Perú en outbound de %s para %s en %s es de %s", subscriber.equivalency, country.spanish, timeToApply.string, self.numberWithDots(successes));
-				        }else{
-							session.send("No tengo roamers de Perú en outbound de %s para %s en %s", subscriber.equivalency, country.spanish, timeToApply.string);
-				        }
-		        	break;
-		        	case 2:
-		        		if(attemps>0){
-		        			session.send("La tasa de éxito de registro de los roamers de Perú en outbound de %s para %s en %s es de %s", subscriber.equivalency, country.spanish, timeToApply.string, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
-				        }else{
-							session.send("No tengo roamers de Perú en outbound de %s para %s en %s", subscriber.equivalency, country.spanish, timeToApply.string);
-				        }
-		        	break;
-		        }
-		        session.endDialog();
-		    });
-		}
 	},
 	/*getNewestReportDateOutbound: function(callback){
 		var self=this;

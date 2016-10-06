@@ -144,21 +144,23 @@ function setupDialogs(){
             console.log("=>NoEnoughData: Detected by Luis: \n",args,"\n");
 
             var result=luisUtil.getDataFromArgs(args);
+            session.dialogData.proccesedArgs=result;
+
             session.send("No estoy seguro de la estadística que quieres");
             builder.Prompts.choice(session, "¿Qué estadística buscas?", "Número de roamers|Tasa de éxito de registro de roamers");
 
-        }, function (session, args, next) {
-            console.log("=>Args received in l2\n", result,"\n");
+        }, function (session, result, next) {
+            console.log("=>Args received in l2\n", session.dialogData.proccesedArgs,"\n");
 
-            if (result.response) {
+            if (result.response && session.dialogData.proccesedArgs) {
                 switch(result.response.entity){
                     case "Número de roamers":
                     case 1:
-                         luisUtil.createAnswerWithData(session, result, 1);
+                         luisUtil.createAnswerWithData(session, session.dialogData.proccesedArgs, 1);
                     break;
                     case "Tasa de éxito de registro de roamers":
                     case 2:
-                         luisUtil.createAnswerWithData(session, result, 2);
+                         luisUtil.createAnswerWithData(session, session.dialogData.proccesedArgs, 2);
                     break;
                     default:
                         session.send("No te he entendido");
@@ -223,38 +225,7 @@ function setupDialogs(){
     });
 
     //dialog.onDefault(builder.DialogAction.beginDialog('/dont-understand'));
-    dialog.onDefault(builder.DialogAction.send('No te he entendido... Prueba con algo del estilo a "Dime el número de roamers inbound de Italia de las últimas 12 horas"'));
-
-    bot.dialog('/dont-understand', [
-        function (session, args, next) {
-            console.log(session,args);
-            session.send("No estoy seguro de la estadística que quieres, estoy aún aprendiendo a hablar y me cuesta un poco :(");
-            builder.Prompts.choice(session, "¿Cómo puedo ayudarte?", "Número de roamers outbound|Número de roamers inbound");
-        },
-        function (session, result, next) {
-            console.log(result);
-            if (result.response) {
-                switch(result.response.entity){
-                    case "Número de roamers outbound":
-                    case 1:
-                        session.send("La funcionalidad de outbound está pendiente... (tumbleweed)"); //TODO
-                        session.endDialog();
-                    break;
-                    case "Número de roamers inbound":
-                    case 2:
-                        session.send("La funcionalidad de inbound pendiente... (tumbleweed)"); //TODO
-                        session.endDialog();
-                    break;
-                    default:
-                        session.send("Sigo sin entenderte, aprenderé de esta conversación para la próxima vez :(");
-                        session.endDialog();
-                    break;
-                }
-            } else {
-                session.send("Ok");
-            }
-        },
-    ]);
+    dialog.onDefault(builder.DialogAction.send('No te he entendido, aún estoy aprendiendo :( Prueba con algo del estilo de "Dime el número de roamers inbound de TIM Italia de las últimas 12 horas" o algo como "¿Cuál es la tasa de éxito de registro para Chile de las últimas dos semanas?"'));
 
     //=========================================================
     // Bots Dialogs
@@ -535,6 +506,8 @@ var luisUtil={
         return {country: country, subscriber: subscriber, direction: directionParsed, timePeriod: timePeriod};
     },
     createAnswerWithData: function(session, result, metricCode){
+        console.log("Received for compute: ", result);
+
         if(result.country && result.country.equivalency && result.country.equivalency.equivalency){
             countryEntity=result.country.equivalency;
             if(result.direction && result.direction.equivalency){

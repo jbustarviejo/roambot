@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "botbuilder": "^3.2.3",
+    "cron": "^1.1.0",
     "fast-csv": "^2.1.0",
     "mongodb": "^2.2.10",
     "nodemailer": "^2.6.0",

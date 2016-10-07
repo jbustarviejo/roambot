@@ -384,18 +384,6 @@ module.exports = {
 		    });
 	    });
 	},
-	/*getNewestReportDateOutbound: function(callback){
-		var self=this;
-		self.database.reportsDataOutbound.find().sort({dataDate : 1}).limit(1).toArray(function(err, docs){
-	        if (docs && docs.length>0){
-	            debug && console.log("Newest Outbound report found!...");
-	            callback && callback(docs[0].dataDate);
-	        }else{
-	            debug && console.log("No reports found in outbound...");
-	            callback && callback(null);
-	        }
-	    });
-	},*/
 	numberWithDots: function(x){
 	    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 	}

@@ -2,6 +2,8 @@
 var MongoClient = require('mongodb').MongoClient;
 var fs = require('fs');
 var csv = require("fast-csv");
+var spawn = require('child_process').spawn;
+var CronJob = require('cron').CronJob;
 
 var database={};
 var files={};
@@ -101,18 +103,42 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 			}
 			files.subscriberFromOperator=function(subscriberName){
 				var initCode=subscriberName.indexOf("(");
-				if(initCode>0){
-					return subscriberName.substring(0,initCode-1);
+				if(subscriberName.contains("VODAFONE")){
+					subscriberName="VODAFONE";
+				}else if(subscriberName.contains("ORANGE") || subscriberName.contains("MOBISTAR")){
+					subscriberName="ORANGE";
+				}else if(subscriberName.contains("MOVISTAR") || subscriberName.contains("TELEFONICA")){
+					subscriberName="TELEFONCIA MOVISTAR";
+				}else if(subscriberName.contains("TELE2")){
+					subscriberName="TELE2";
+				}else if(subscriberName.contains("T-MOBILE")){
+					subscriberName="T-MOBILE";
+				}else if(initCode>0){
+					subscriberName = subscriberName.substring(0,initCode-1);
 				}
-				return subscriberName;
+				return subscriberName.trim();
 			}
 
-			//Change this for a cronjob
-			setTimeout(function(){
-    			files.updateReportsData();
-			}, 1);
+			console.log("=>Creating crons...");
+
+			//Crons
+			new CronJob({
+				//Run every 30 minutes
+				cronTime: '* */30 * * * *',
+				start: true,
+				timeZone: 'Europe/Madrid',
+					onTick: function() {
+					console.log("Cronjob tick");
+					//Get the reports by code
+					spawn('sh', [ 'getReports.sh' ], {});
+					//Wait some minutes and then proccess the file
+					setTimeout(function(){
+						files.updateReportsData();
+					}, 1000 * 60 * 10);
+				}
+			}).start();
+
+			console.log("=>RoamBot files procesing ready!");
 		});	
 	});
 });
-
-console.log("=>RoamBot files procesing ready...");

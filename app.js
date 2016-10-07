@@ -20,7 +20,7 @@ var enableHttps=false;
 
 //Global vars
 var bot;
-var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=430dee16-6b4a-411c-9ce2-f15305aff8fb&subscription-key=57964100a34f4d1aa3c5cd619690f610&q=');
+var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=223cfb34-0e28-43ee-8dbb-bfca96654f3f&subscription-key=57964100a34f4d1aa3c5cd619690f610&q=');
 var dialog = new builder.IntentDialog({ recognizers: [recognizer] });
 
 console.log("=>RoamBot starting...");
@@ -41,10 +41,8 @@ console.log("=>RoamBot starting...");
         database.getUser=function(id, callback){
             this.users.findOne({_id: id}, function(err, doc){
                 if (doc){
-                    debug && console.log("user found!...");
                     callback && callback(doc);
                 }else{
-                    debug && console.log("No user found...");
                     callback && callback(null);
                 }
             });
@@ -371,14 +369,6 @@ var util={
 };
 
 var luisUtil={
-    /*getElementInSentence: function(sentente, elementList){
-        for(var i=0; i<elementList.length; i++){
-            if(elementList[i].startIndex>=sentente.startIndex && elementList[i].endIndex<=sentente.endIndex){
-                return elementList[i];
-            }
-        }
-        return null;
-    },*/
     parseCountry: function(sentence){
         var countryDetected = builder.EntityRecognizer.findBestMatch(parse.countryList, sentence, 0.01);
         console.log("Country recognition: ",countryDetected);

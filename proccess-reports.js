@@ -103,15 +103,15 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 			}
 			files.subscriberFromOperator=function(subscriberName){
 				var initCode=subscriberName.indexOf("(");
-				if(subscriberName.contains("VODAFONE")){
+				if(subscriberName.indexOf("VODAFONE")>0){
 					subscriberName="VODAFONE";
-				}else if(subscriberName.contains("ORANGE") || subscriberName.contains("MOBISTAR")){
+				}else if(subscriberName.indexOf("ORANGE")>0 || subscriberName.indexOf("MOBISTAR")>0){
 					subscriberName="ORANGE";
-				}else if(subscriberName.contains("MOVISTAR") || subscriberName.contains("TELEFONICA")){
+				}else if(subscriberName.indexOf("MOVISTAR")>0 || subscriberName.indexOf("TELEFONICA")>0){
 					subscriberName="TELEFONCIA MOVISTAR";
-				}else if(subscriberName.contains("TELE2")){
+				}else if(subscriberName.indexOf("TELE2")>0){
 					subscriberName="TELE2";
-				}else if(subscriberName.contains("T-MOBILE")){
+				}else if(subscriberName.indexOf("T-MOBILE")>0){
 					subscriberName="T-MOBILE";
 				}else if(initCode>0){
 					subscriberName = subscriberName.substring(0,initCode-1);
@@ -137,7 +137,9 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 					}, 1000 * 60 * 10);
 				}
 			}).start();
-
+			
+			files.updateReportsData();
+			
 			console.log("=>RoamBot files procesing ready!");
 		});	
 	});

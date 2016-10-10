@@ -36,7 +36,7 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				var stream = fs.createReadStream("./reports/"+reportName);
 				var csvStream = csv({delimiter: ";"})
 				    .on("data", function(data){
-				        if(data[0]=="Hour" || data.length<=0){ //Skip headers
+				        if(data[0]=="Hour" || data[0]=="Day" || data.length<=0){ //Skip headers
 				        	return;
 				        }
 				        if(reportName.startsWith("inbound")){
@@ -76,7 +76,7 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				    .on("end", function(){
 				    	stream.close();
 				    //	fs.unlink("./reports/"+reportName); //UNCOMENT
-				        console.log("done");
+				        console.log("Done with report: "+reportName);
 				        return;
 				    });
 				stream.pipe(csvStream);
@@ -94,11 +94,12 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 			files.dateFromReport=function(dateStr){
 				dateStr.split(/[\s,\/:]+/);
 				var parts = dateStr.split(/[\s,\/:]+/);
-				var dt = new Date(Date.UTC(parseInt(parts[0], 10),
+				var dt = new Date(Date.UTC(parseInt(parts[2], 10),
 				                parseInt(parts[1], 10) - 1,
-				                parseInt(parts[2], 10),
+				                parseInt(parts[0], 10),
                 		        parseInt(parts[3], 10),
                 				parseInt(parts[4], 10)));
+				//console.log("Date "+parts[0]+"/"+parts[1]+"/"+parts[2]+" "+parts[3]+":"+parts[4]+" => "+dt);
 				return dt;
 			}
 			files.subscriberFromOperator=function(subscriberName){
@@ -124,7 +125,7 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 			//Crons
 			new CronJob({
 				//Run every 30 minutes
-				cronTime: '* */30 * * * *',
+				cronTime: '00 */30 * * * *',
 				start: true,
 				timeZone: 'Europe/Madrid',
 					onTick: function() {

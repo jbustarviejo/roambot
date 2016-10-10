@@ -9,8 +9,8 @@ module.exports = {
     periodEquivalency: [1, 1, 24, 24, 24, 24*7, 24*7, 24*30, 24*30],
     periodSingle: ["hora", "hora", "día", "día", "ayer", "semana", "semana","mes","mes"],
     period2Plural: ["horas", "horas", "días", "días", "ayer", "semanas", "semanas","meses","meses"],
-    period2Single: ["la última", "la última", "el último", "el último", "", "la última", "la última", "el último", "el último"],
-    periodPlural: ["las últimas", "las últimas", "los últimos", "los últimos", "", "las últimas", "las últimas", "los últimos", "los últimos"],
+    period2Single: ["la última", "la última", "el último", "el último", "el día de", "la última", "la última", "el último", "el último"],
+    periodPlural: ["las últimas", "las últimas", "los últimos", "los últimos", "el día de", "las últimas", "las últimas", "los últimos", "los últimos"],
     //ENG-ESP-Gentilicio-Others
     countryList: [
         'Afghanistan',

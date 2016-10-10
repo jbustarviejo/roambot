@@ -28,7 +28,7 @@ module.exports = {
 	        	break;
 	        	case 2:
 	        		if(attemps>0){
-						session.send("La tasa de éxito de registro de los roamers de Perú en %s en %s para todos los países es de %s", timeToApply.string, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
+						session.send("La tasa de éxito de registro de los roamers de Perú en %s en %s para todos los países es de %s", direction, timeToApply.string, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
 			        }else{
 						session.send("No tengo roamers de Perú en %s en %s...", direction, timeToApply.string);
 			        }

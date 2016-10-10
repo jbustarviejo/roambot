@@ -27,7 +27,7 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 							debug && console.log("Proccessing file: "+items[i]);
 							files.readReport(items[i]);
 						}else{
-							console.log("Report ignored!: "+items[i]);
+							console.log("File ignored!: "+items[i]);
 						}
 				    }
 				});
@@ -128,18 +128,19 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				cronTime: '00 */30 * * * *',
 				start: true,
 				timeZone: 'Europe/Madrid',
-					onTick: function() {
+				onTick: function() {
 					console.log("Cronjob tick");
 					//Get the reports by code
-					spawn('sh', [ 'getReports.sh' ], {});
-					//Wait some minutes and then proccess the file
-					setTimeout(function(){
-						files.updateReportsData();
-					}, 1000 * 60 * 10);
+					var shResult=spawn('sh', ['getReports.sh'], {stdio: 'inherit'});
+
+					shResult.on('exit', function (code) {
+						if(code===0){
+							console.log("End script succesfully, processing reports");
+							files.updateReportsData();
+						}
+					});
 				}
 			}).start();
-			
-			files.updateReportsData();
 			
 			console.log("=>RoamBot files procesing ready!");
 		});	

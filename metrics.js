@@ -64,16 +64,16 @@ module.exports = {
 	        	case 1:
 	        	default:
 	 				 if(successes>0){
-						session.send("En total, el número de roamers de Perú en %s en %s para la operadora %s es de %s", direction, timeToApply.string, subscriber.equivalency, self.numberWithDots(successes));
+						session.send("En total, el número de roamers de Perú en %s en %s para la operadora %s es de %s", direction, timeToApply.string, self.toTitleCase(subscriber.equivalency), self.numberWithDots(successes));
 			        }else{
-						session.send("No tengo roamers de Perú %s para la operadora %s en %s...", direction, subscriber.equivalency, timeToApply.string);
+						session.send("No tengo roamers de Perú %s para la operadora %s en %s...", direction, self.toTitleCase(subscriber.equivalency), timeToApply.string);
 			        }
 	        	break;
 	        	case 2:
 	        		if(attemps>0){
-	        			session.send("La tasa de éxito de registro de los roamers de Perú en %s en %s para la operadora %s es de %s", direction, timeToApply.string, subscriber.equivalency, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
+	        			session.send("La tasa de éxito de registro de los roamers de Perú en %s en %s para la operadora %s es de %s", direction, timeToApply.string, self.toTitleCase(subscriber.equivalency), self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
 			        }else{
-						session.send("No tengo roamers de Perú en %s para la operadora %s en %s...", direction, subscriber.equivalency, timeToApply.string);
+						session.send("No tengo roamers de Perú en %s para la operadora %s en %s...", direction, self.toTitleCase(subscriber.equivalency), timeToApply.string);
 			        }
 	        	break;
 	        }
@@ -152,14 +152,14 @@ module.exports = {
 	        	case 1:
 	        	default:
 			        if(successes>0){
-						session.send("En total, el número de roamers de Perú en %s de %s para %s en %s es de %s", direction, subscriber.equivalency, country.spanish, timeToApply.string, self.numberWithDots(successes));
+						session.send("En total, el número de roamers de Perú en %s de %s para %s en %s es de %s", direction, self.toTitleCase(subscriber.equivalency), country.spanish, timeToApply.string, self.numberWithDots(successes));
 			        }else{
-						session.send("No tengo roamers de Perú en %s de %s para %s en %s", direction, subscriber.equivalency, country.spanish, timeToApply.string);
+						session.send("No tengo roamers de Perú en %s de %s para %s en %s", direction, self.toTitleCase(subscriber.equivalency), country.spanish, timeToApply.string);
 			        }
 	        	break;
 	        	case 2:
 	        		if(attemps>0){
-	        			session.send("La tasa de éxito de registro de los roamers de Perú en %s de %s para %s en %s es de %s", direction, subscriber.equivalency, country.spanish, timeToApply.string, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
+	        			session.send("La tasa de éxito de registro de los roamers de Perú en %s de %s para %s en %s es de %s", direction, self.toTitleCase(subscriber.equivalency), country.spanish, timeToApply.string, self.numberWithDots(Math.round(10000*successes/attemps)/100)+"%");
 			        }else{
 						session.send("No tengo roamers de Perú en %s para %s en %s", direction, country.spanish, timeToApply.string);
 			        }
@@ -263,16 +263,16 @@ module.exports = {
 		        	case 1:
 		        	default:
 			        	if(sumTransactions>0){
-							session.send("En total, el número de roamers de Perú para la operadora %s (todos los países) en %s es de %s (%s en inbound y %s en outbound)", subscriber.equivalency, timeToApply.string, self.numberWithDots(sumTransactions), self.numberWithDots(inboundTransactions), self.numberWithDots(outboundTransactions));
+							session.send("En total, el número de roamers de Perú para la operadora %s (todos los países) en %s es de %s (%s en inbound y %s en outbound)", self.toTitleCase(subscriber.equivalency), timeToApply.string, self.numberWithDots(sumTransactions), self.numberWithDots(inboundTransactions), self.numberWithDots(outboundTransactions));
 				        }else{
-							session.send("No tengo roamers de Perú para la operadora %s en %s",subscriber.equivalency, timeToApply.string);
+							session.send("No tengo roamers de Perú para la operadora %s en %s", self.toTitleCase(subscriber.equivalency), timeToApply.string);
 				        }
 		        	break;
 		        	case 2:
 		        		if(sumAttemps>0){
-							session.send("La tasa de éxito de registro de los roamers de Perú para la operadora %s (todos los países) en %s es de %s (siendo de un %s en inbound y %s en outbound)", subscriber.equivalency, timeToApply.string, self.numberWithDots(Math.round(10000*sumTransactions/sumAttemps)/100)+"%", self.numberWithDots(Math.round(10000*inboundTransactions/inboundAttemps)/100)+"%", self.numberWithDots(Math.round(10000*outboundTransactions/outboundAttemps)/100)+"%");
+							session.send("La tasa de éxito de registro de los roamers de Perú para la operadora %s (todos los países) en %s es de %s (siendo de un %s en inbound y %s en outbound)", self.toTitleCase(subscriber.equivalency), timeToApply.string, self.numberWithDots(Math.round(10000*sumTransactions/sumAttemps)/100)+"%", self.numberWithDots(Math.round(10000*inboundTransactions/inboundAttemps)/100)+"%", self.numberWithDots(Math.round(10000*outboundTransactions/outboundAttemps)/100)+"%");
 				        }else{
-							session.send("No tengo roamers de Perú para la operadora %s en %s",subscriber.equivalency, timeToApply.string);
+							session.send("No tengo roamers de Perú para la operadora %s en %s", self.toTitleCase(subscriber.equivalency), timeToApply.string);
 				        }
 		        	break;
 		        }
@@ -367,16 +367,16 @@ module.exports = {
 		        	case 1:
 		        	default:
 				        if(sumTransactions>0){
-							session.send("En total, el número de roamers de Perú para la operadora %s de %s en %s es de %s (%s en inbound y %s en outbound)", subscriber.equivalency, country.spanish, timeToApply.string, self.numberWithDots(sumTransactions), self.numberWithDots(inboundTransactions), self.numberWithDots(outboundTransactions));
+							session.send("En total, el número de roamers de Perú para la operadora %s de %s en %s es de %s (%s en inbound y %s en outbound)", self.toTitleCase(subscriber.equivalency), country.spanish, timeToApply.string, self.numberWithDots(sumTransactions), self.numberWithDots(inboundTransactions), self.numberWithDots(outboundTransactions));
 				        }else{
-							session.send("No tengo roamers de Perú para la operadora %s de %s en %s", subscriber.equivalency, country.spanish, timeToApply.string);
+							session.send("No tengo roamers de Perú para la operadora %s de %s en %s", self.toTitleCase(subscriber.equivalency), country.spanish, timeToApply.string);
 				        }
 		        	break;
 		        	case 2:
 		        		if(sumAttemps>0){
-		        			session.send("La tasa de éxito de registro de los roamers de Perú para la operadora %s de %s en %s es de %s (siendo de un %s en inbound y %s en outbound)", subscriber.equivalency, country.spanish, timeToApply.string, self.numberWithDots(Math.round(10000*sumTransactions/sumAttemps)/100)+"%", self.numberWithDots(Math.round(10000*inboundTransactions/inboundAttemps)/100)+"%", self.numberWithDots(Math.round(10000*outboundTransactions/outboundAttemps)/100)+"%");
+		        			session.send("La tasa de éxito de registro de los roamers de Perú para la operadora %s de %s en %s es de %s (siendo de un %s en inbound y %s en outbound)", self.toTitleCase(subscriber.equivalency), country.spanish, timeToApply.string, self.numberWithDots(Math.round(10000*sumTransactions/sumAttemps)/100)+"%", self.numberWithDots(Math.round(10000*inboundTransactions/inboundAttemps)/100)+"%", self.numberWithDots(Math.round(10000*outboundTransactions/outboundAttemps)/100)+"%");
 				        }else{
-							session.send("No tengo roamers de Perú para la operadora %s de %s en %s", subscriber.equivalency, country.spanish, timeToApply.string);
+							session.send("No tengo roamers de Perú para la operadora %s de %s en %s", self.toTitleCase(subscriber.equivalency), country.spanish, timeToApply.string);
 				        }
 		        	break;
 		        }
@@ -386,5 +386,10 @@ module.exports = {
 	},
 	numberWithDots: function(x){
 	    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+	},
+	toTitleCase: function(str){
+	    return str.replace(/\w\S*/g, function(txt){
+	      return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+	    });
 	}
 }

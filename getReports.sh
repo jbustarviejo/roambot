@@ -9,17 +9,7 @@ sshpass -p "datatronics1" ssh datatronics@80.28.51.171 sshpass -p "mclaw.." ssh 
 
 file=reports/inbound_$uuidInbound.csv
 
-size=$((
-  du --apparent-size --block-size=1 "$file" 2>/dev/null ||
-  gdu --apparent-size --block-size=1 "$file" 2>/dev/null ||
-  find "$file" -printf "%s" 2>/dev/null ||
-  gfind "$file" -printf "%s" 2>/dev/null ||
-  stat --printf="%s" "$file" 2>/dev/null ||
-  stat -f%z "$file" 2>/dev/null ||
-  wc -c <"$file" 2>/dev/null
-) | awk '{print $1}')
-
-size=$((size+0))
+size=$( (du --apparent-size --block-size=1 "$file" 2>/dev/null || gdu --apparent-size --block-size=1 "$file" 2>/dev/null || find "$file" -printf "%s" 2>/dev/null || gfind "$file" -printf "%s" 2>/dev/null || stat --printf="%s" "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null || wc -c <"$file" 2>/dev/null) | awk '{print $1}')
 
 echo "Size of inbound file: $size"
 
@@ -40,17 +30,7 @@ sshpass -p "datatronics1" ssh datatronics@80.28.51.171 sshpass -p "mclaw.." ssh 
 
 file=reports/outbound_$uuidOutbound.csv
 
-size=$((
-  du --apparent-size --block-size=1 "$file" 2>/dev/null ||
-  gdu --apparent-size --block-size=1 "$file" 2>/dev/null ||
-  find "$file" -printf "%s" 2>/dev/null ||
-  gfind "$file" -printf "%s" 2>/dev/null ||
-  stat --printf="%s" "$file" 2>/dev/null ||
-  stat -f%z "$file" 2>/dev/null ||
-  wc -c <"$file" 2>/dev/null
-) | awk '{print $1}')
-
-size=$((size+0))
+size=$( (du --apparent-size --block-size=1 "$file" 2>/dev/null || gdu --apparent-size --block-size=1 "$file" 2>/dev/null || find "$file" -printf "%s" 2>/dev/null || gfind "$file" -printf "%s" 2>/dev/null || stat --printf="%s" "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null || wc -c <"$file" 2>/dev/null) | awk '{print $1}')
 
 echo "Size of outbound file: $size"
 

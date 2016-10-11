@@ -157,12 +157,12 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 
 				var startCommand;
 				if(os.hostname()=="MacBook-de-jbustarviejogmailcom.local"){
-		        	startCommand="";
+		        	startCommand="sshpass";
 		        }else{
 		        	startCommand="/usr/bin/sshpass";
 		        }
 
-				var child = exec(startCommand+'sshpass -p "datatronics1" ssh datatronics@80.28.51.171 sshpass -p "mclaw.." ssh mclaw@213.140.41.202 ssh bo cat "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv" > '+fileDirection, // command line argument directly in string
+				var child = exec(startCommand+' -p "datatronics1" ssh datatronics@80.28.51.171 sshpass -p "mclaw.." ssh mclaw@213.140.41.202 ssh bo cat "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv" > '+fileDirection, // command line argument directly in string
 				function (error, stdout, stderr) {
 				    //console.log('stdout: ' + stdout);
 				    if (error !== null) {
@@ -188,11 +188,11 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				console.log("Removing "+direction+" in server...");
 				var startCommand;
 				if(os.hostname()=="MacBook-de-jbustarviejogmailcom.local"){
-		        	startCommand="";
+		        	startCommand="sshpass";
 		        }else{
 		        	startCommand="/usr/bin/sshpass";
 		        }
-				var child = exec(startCommand+'sshpass -p "datatronics1" ssh datatronics@80.28.51.171 sshpass -p "mclaw.." ssh mclaw@213.140.41.202 ssh bo rm "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv"', // command line argument directly in string
+				var child = exec(startCommand+' -p "datatronics1" ssh datatronics@80.28.51.171 sshpass -p "mclaw.." ssh mclaw@213.140.41.202 ssh bo rm "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv"', // command line argument directly in string
 				function (error, stdout, stderr) {
 				    console.log('stdout: ' + stdout);
 				    if (error !== null) {
@@ -203,7 +203,6 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				    }
 				});
 			}
-		files.getReports();return;
 			console.log("=>Creating crons...");
 
 			//Crons

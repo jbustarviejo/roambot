@@ -6,6 +6,7 @@ var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
 var CronJob = require('cron').CronJob;
 var uuid = require('uuid');
+var os = require('os');
 
 var database={};
 var files={};
@@ -202,7 +203,7 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				    }
 				});
 			}
-			
+		files.getReports();return;
 			console.log("=>Creating crons...");
 
 			//Crons

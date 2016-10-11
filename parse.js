@@ -1,8 +1,8 @@
 //Parse 
 
 module.exports = {
-    directions: ["inbound","outbound","in","out"],
-    directionsEquivalency: ["inbound","outbound","inbound","outbound"],
+    directions: ["inbound","outbound","in","out", "entrante", "saliente"],
+    directionsEquivalency: ["inbound","outbound","inbound","outbound","inbound","outbound"],
     quantity: ["una", "uno", "un", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez", "once", "doce", "trece", "catorce", "quince"],
     quantityEquivalency: [1,1,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
     period: ["hora", "horas", "día", "días", "ayer", "semana", "semanas","mes","meses"],

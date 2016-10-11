@@ -3,7 +3,9 @@ var MongoClient = require('mongodb').MongoClient;
 var fs = require('fs');
 var csv = require("fast-csv");
 var spawn = require('child_process').spawn;
+var exec = require('child_process').exec;
 var CronJob = require('cron').CronJob;
+var uuid = require('uuid');
 
 var database={};
 var files={};
@@ -119,7 +121,77 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				}
 				return subscriberName.trim();
 			}
+			files.getReports= function(){
+				var self=this;
+				self.getReportsFromServerWithDelete("Inbound", function(inResult){
+					self.getReportsFromServerWithDelete("Outbound", function(outResult){
+						console.log("Results",inResult,outResult);
+						files.updateReportsData();
+					});
+				});
+			}
+			files.getReportsFromServerWithDelete= function(direction, callback){	
+				this.getReportByDirecion(direction, function(result){
+					if(result===true){
+						console.log("Continue!");
+						files.RemoveReportsInServerByDirection(direction, function(result){
+							if(result===true){
+								console.log("Removed "+direction+" in server!");
+								callback(true);
+							}else{
+								console.log("Stop!");
+								callback(false);
+							}
+						});
+					}else{
+						console.log("Stop!");
+						callback(false);
+					}
+				});
+			};
+			files.getReportByDirecion = function(direction, callback){	
+				var uuidReport=uuid.v4();
+				console.log("Getting "+direction+"...");
+				var fileDirection="reports/"+direction.toLowerCase()+"_"+uuidReport+".csv";
 
+				var child = exec('sshpass -p "datatronics1" ssh datatronics@80.28.51.171 sshpass -p "mclaw.." ssh mclaw@213.140.41.202 ssh bo cat "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv" > '+fileDirection, // command line argument directly in string
+				function (error, stdout, stderr) {
+				    //console.log('stdout: ' + stdout);
+				    if (error !== null) {
+					    console.log('Error: ' + stderr);
+					    console.log("File "+fileDirection+" not filled... deleting");
+					    fs.unlink(fileDirection);
+					    callback(false);
+				    }else{
+				    	var stats = fs.statSync(fileDirection)
+						var fileSizeInBytes = stats["size"]
+	 					console.log("File "+fileDirection+" size: "+fileSizeInBytes);
+	 					if(fileSizeInBytes==0){
+	 						console.log("Empty file... deleting");
+	 						fs.unlink(fileDirection);
+	 						callback(false);
+	 					}else{
+	 						callback(true);
+	 					}
+				    }
+				});
+			}
+			files.RemoveReportsInServerByDirection = function(direction, callback){	
+				console.log("Removing "+direction+" in server...");
+				var child = exec('sshpass -p "datatronics1" ssh datatronics@80.28.51.171 sshpass -p "mclaw.." ssh mclaw@213.140.41.202 ssh bo rm "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv"', // command line argument directly in string
+				function (error, stdout, stderr) {
+				    console.log('stdout: ' + stdout);
+				    if (error !== null) {
+				      	console.log('Error: ' + stderr);
+				      	callback(false);
+				    }else{
+ 						callback(true);
+				    }
+				});
+			}
+			
+			files.getReports();return;
+			//CRONS IGNORED RIGHT NOW: TODO, DELETE THIS
 			console.log("=>Creating crons...");
 
 			//Crons
@@ -130,15 +202,7 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				timeZone: 'Europe/Madrid',
 				onTick: function() {
 					console.log("Cronjob tick");
-					//Get the reports by code
-					var shResult=spawn('sh', ['getReports.sh'], {stdio: 'inherit'});
-
-					shResult.on('exit', function (code) {
-						if(code===0){
-							console.log("End script succesfully, processing reports");
-							files.updateReportsData();
-						}
-					});
+					files.getReports();
 				}
 			}).start();
 			

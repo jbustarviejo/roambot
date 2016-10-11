@@ -154,7 +154,14 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				console.log("Getting "+direction+"...");
 				var fileDirection="reports/"+direction.toLowerCase()+"_"+uuidReport+".csv";
 
-				var child = exec('sshpass -p "datatronics1" ssh datatronics@80.28.51.171 sshpass -p "mclaw.." ssh mclaw@213.140.41.202 ssh bo cat "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv" > '+fileDirection, // command line argument directly in string
+				var startCommand;
+				if(os.hostname()=="MacBook-de-jbustarviejogmailcom.local"){
+		        	startCommand="";
+		        }else{
+		        	startCommand="/usr/bin/sshpass";
+		        }
+
+				var child = exec(startCommand+'sshpass -p "datatronics1" ssh datatronics@80.28.51.171 sshpass -p "mclaw.." ssh mclaw@213.140.41.202 ssh bo cat "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv" > '+fileDirection, // command line argument directly in string
 				function (error, stdout, stderr) {
 				    //console.log('stdout: ' + stdout);
 				    if (error !== null) {
@@ -178,7 +185,13 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 			}
 			files.RemoveReportsInServerByDirection = function(direction, callback){	
 				console.log("Removing "+direction+" in server...");
-				var child = exec('sshpass -p "datatronics1" ssh datatronics@80.28.51.171 sshpass -p "mclaw.." ssh mclaw@213.140.41.202 ssh bo rm "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv"', // command line argument directly in string
+				var startCommand;
+				if(os.hostname()=="MacBook-de-jbustarviejogmailcom.local"){
+		        	startCommand="";
+		        }else{
+		        	startCommand="/usr/bin/sshpass";
+		        }
+				var child = exec(startCommand+'sshpass -p "datatronics1" ssh datatronics@80.28.51.171 sshpass -p "mclaw.." ssh mclaw@213.140.41.202 ssh bo rm "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv"', // command line argument directly in string
 				function (error, stdout, stderr) {
 				    console.log('stdout: ' + stdout);
 				    if (error !== null) {
@@ -190,8 +203,6 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				});
 			}
 			
-			files.getReports();return;
-			//CRONS IGNORED RIGHT NOW: TODO, DELETE THIS
 			console.log("=>Creating crons...");
 
 			//Crons

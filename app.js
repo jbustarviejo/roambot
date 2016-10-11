@@ -471,7 +471,7 @@ var luisUtil={
                 console.log("Pe2");
                 if(quantity.equivalency && quantity.equivalency.equivalency){
                     console.log("Qe2 y Pe2");
-                    timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * quantity.equivalency.equivalency * period.equivalency.equivalency);
+                    timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * quantity.equivalency.equivalency * period.equivalency.equivalency);
                     if(quantity.equivalency.equivalency==1){
                         timePeriod.string = period.equivalency.single+" "+period.equivalency.toSingle;   
                     }else{
@@ -479,7 +479,7 @@ var luisUtil={
                     }
                 }else{
                     console.log("Pe3");
-                    timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * 1 * period.equivalency.equivalency);
+                    timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * period.equivalency.equivalency);
                     timePeriod.string = period.equivalency.plural+" "+period.equivalency.toSingle;   
                 }
             }
@@ -488,7 +488,7 @@ var luisUtil={
             period.equivalency=luisUtil.parseTimePeriod(period.entity);
             if(period.equivalency && period.equivalency.equivalency){
                 console.log("Pe1");
-                timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * 1 * period.equivalency.equivalency);
+                timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * period.equivalency.equivalency);
                 timePeriod.string = period.equivalency.toSingle+" "+period.equivalency.single;   
             }
         }

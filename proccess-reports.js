@@ -170,7 +170,7 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 		        	startCommand="/usr/bin/sshpass";
 		        }
 
-				var child = exec(startCommand+' -p "datatronics1" ssh datatronics@80.28.51.171 sshpass -p "mclaw.." ssh mclaw@213.140.41.202 ssh bo cat "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv" > '+fileDirection, // command line argument directly in string
+				var child = exec(startCommand+' -p "datatronics1" ssh -o StrictHostKeyChecking=no datatronics@80.28.51.171 ssh -mclaw@213.140.41.202 ssh bo cat "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv" > '+fileDirection, // command line argument directly in string
 				function (error, stdout, stderr) {
 				    //console.log('stdout: ' + stdout);
 				    if (error !== null) {
@@ -200,7 +200,7 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 		        }else{
 		        	startCommand="/usr/bin/sshpass";
 		        }
-				var child = exec(startCommand+' -p "datatronics1" ssh datatronics@80.28.51.171 sshpass -p "mclaw.." ssh mclaw@213.140.41.202 ssh bo rm "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv"', // command line argument directly in string
+				var child = exec(startCommand+' -p "datatronics1" ssh -o StrictHostKeyChecking=no datatronics@80.28.51.171 ssh mclaw@213.140.41.202 ssh bo rm "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv"', // command line argument directly in string
 				function (error, stdout, stderr) {
 				    console.log('stdout: ' + stdout);
 				    if (error !== null) {

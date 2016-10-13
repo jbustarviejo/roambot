@@ -102,13 +102,14 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				                parseInt(parts[2], 10),
                 		        parseInt(parts[3], 10),
                 				parseInt(parts[4], 10)));
-				//console.log("Date "+parts[0]+"/"+parts[1]+"/"+parts[2]+" "+parts[3]+":"+parts[4]+" => "+dt);
-				if(dt.getFullYear()>2010){
+				//console.log("Date 1: "+parts[0]+"/"+parts[1]+"/"+parts[2]+" "+parts[3]+":"+parts[4]+" => "+dt+" year:"+dt1y);
+				if(dt.getFullYear()<2010){
 					var dt = new Date(Date.UTC(parseInt(parts[2], 10),
 				                parseInt(parts[1], 10) - 1,
 				                parseInt(parts[0], 10),
                 		        parseInt(parts[3], 10),
                 				parseInt(parts[4], 10)));
+					//console.log("Date 2 por "+dt1y+"!!: "+parts[0]+"/"+parts[1]+"/"+parts[2]+" "+parts[3]+":"+parts[4]+" => "+dt);
 				}
 				return dt;
 			}

@@ -80,6 +80,7 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				    	stream.close();
 				    //	fs.unlink("./reports/"+reportName); //UNCOMENT
 				        console.log("Done with report: "+reportName);
+				        fs.rename("./reports/"+reportName, "./reports/Security_copy/"+reportName);
 				        return;
 				    });
 				stream.pipe(csvStream);

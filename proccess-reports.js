@@ -56,6 +56,10 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				    allEntries = data.toString().split('\n'); 
 
 				    function readFromPos(pos){
+				    	var progress=Math.round(pos*100/allEntries.length);
+				    	if(progress%10==0){
+				    		console.log(progress+"%");
+				    	}
 				    	if(pos>=allEntries.length-1){
 				    		fs.rename("./reports/"+reportName, "./reports/Security_copy/"+reportName, function(){
 				    			callback(); return;

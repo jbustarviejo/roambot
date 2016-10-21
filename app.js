@@ -149,7 +149,8 @@ function setupDialogs(){
 
         }, function (session, result, next) {
             console.log("=>Args received in l2\n", session.dialogData.proccesedArgs,"\n");
-
+            session.dialogData.proccesedArgs.timePeriod.since=new Date(session.dialogData.proccesedArgs.timePeriod.since); //Fix to MS error
+            
             if (result.response && session.dialogData.proccesedArgs) {
                 switch(result.response.entity){
                     case "Número de roamers":

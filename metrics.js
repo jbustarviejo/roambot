@@ -291,7 +291,7 @@ module.exports = {
 		var queryOut = {subscriberCountryName: country.equivalency, dataDate: {$gt: timeToApply.since}};
 		var queryIn = {originCountry: country.equivalency, dataDate: {$gt: timeToApply.since}};
 		var filter = {successes: 1, sumTransactions:1};
-
+console.log("1.qIn: ",queryIn, "\n 2.quout:",queryOut);
 		self.database.reportsDataOutbound.find(queryOut, filter).toArray(function(err, docs){
 	        if (docs && docs.length>0){
 	            for (var i = 0; i < docs.length; i++) {

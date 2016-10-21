@@ -25,74 +25,112 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 		database.reportsDataOutbound = db.collection('reportsDataOutbound',function(){
 			files.updateReportsData=function(){
 				fs.readdir("./reports", function(err, items) {
-				    for (var i=0; i<items.length; i++) {
-				        if(items[i].endsWith(".csv") && (items[i].startsWith("inbound") || items[i].startsWith("outbound"))){
-							debug && console.log("Proccessing file: "+items[i]);
-							files.readReport(items[i]);
-						}else{
-							console.log("File ignored!: "+items[i]);
+					//console.log("items",items);
+
+					function readReportInPos(post){
+						//console.log("pos recibida",post, " Archivo"+items[post]);
+						if(post>=items.length){
+							console.log("=>All finish!!"); return;
 						}
+				        if(items[post].endsWith(".csv") && (items[post].startsWith("inbound") || items[post].startsWith("outbound"))){
+							files.readReport(items[post], function(){
+								//console.log("Nueva pos va  aser ",post+1)
+								readReportInPos(post+1); return;
+							});
+						}else{
+							console.log("File ignored!: "+items[post]);
+							readReportInPos(post+1); return;
+						}
+						return;
 				    }
+				    readReportInPos(0);
 				});
 			};
-			files.readReport=function(reportName){
-				var stream = fs.createReadStream("./reports/"+reportName);
-				var csvStream = csv({delimiter: ";"})
-				    .on("data", function(data){
-				        if(data[0]=="Hour" || data[0]=="Day" || data.length<=0){ //Skip headers
-				        	return;
-				        }
-				        if(reportName.startsWith("inbound")){
-							var cell={
-					        	dataDate: files.dateFromReport(data[0]),
-					        	dataType: "inbound",
-					        	subscriberOperatorName: files.subscriberFromOperator(data[1]),
-					        	subscriberOperatorNameWithCode: data[1],
-					        	subscriberCountryName: "Peru",
-					        	originCountry: data[2],
-					        	originOperatorName: files.subscriberFromOperator(data[3]),
-					        	originOperatorNameWithCode: data[3],
-					        	sumTransactions: parseInt(data[4]),
-					        	successes: parseInt(data[5])
+			files.readReport=function(reportName, callback){
+				fs.readFile("./reports/"+reportName, function (err, data) {
+					console.log("Proccessing file: "+"./reports/"+reportName);
+					if(!data){
+						console.log("No data ",err);
+						callback(); return;
+					}
+				    allEntries = data.toString().split('\n'); 
+
+				    function readFromPos(pos){
+				    	if(pos>=allEntries.length-1){
+				    		fs.rename("./reports/"+reportName, "./reports/Security_copy/"+reportName, function(){
+				    			callback(); return;
+				    		});
+				    		return;
+				    	}
+				    	csv.fromString(allEntries[pos], {delimiter: ";"})
+						.on("data", function(data){
+							//console.log("Data! "+data, pos)
+						 	if(data[0]=="Hour" || data[0]=="Day" || data.length<=0){ //Skip headers
+					        	readFromPos(pos+1); return;
 					        }
-					        database.insertInboundData(cell);
-					        return;
-				        }else if(reportName.startsWith("outbound")){
-				        	var cell={
-					        	dataDate: files.dateFromReport(data[0]),
-					        	dataType: "outbound",
-					        	subscriberCountryName: data[1],
-					        	subscriberOperatorName: files.subscriberFromOperator(data[2]),
-					        	subscriberOperatorNameWithCode: data[2],
-					        	prefix: data[6],
-					        	originOperatorName: files.subscriberFromOperator(data[3]),
-					        	originOperatorNameWithCode: data[3],
-					        	sumTransactions: parseInt(data[4]),
-					        	successes: parseInt(data[5])
+					        if(reportName.startsWith("inbound")){
+								var cell={
+						        	dataDate: files.dateFromReport(data[0]),
+						        	dataType: "inbound",
+						        	subscriberOperatorName: files.subscriberFromOperator(data[1]),
+						        	subscriberOperatorNameWithCode: data[1],
+						        	subscriberCountryName: "Peru",
+						        	originCountry: data[2],
+						        	originOperatorName: files.subscriberFromOperator(data[3]),
+						        	originOperatorNameWithCode: data[3],
+						        	sumTransactions: parseInt(data[4]),
+						        	successes: parseInt(data[5])
+						        }
+						        database.insertInboundData(cell, function(){
+						        	readFromPos(pos+1); return;
+						        });
+						        return;
+					        }else if(reportName.startsWith("outbound")){
+					        	var cell={
+						        	dataDate: files.dateFromReport(data[0]),
+						        	dataType: "outbound",
+						        	subscriberCountryName: data[1],
+						        	subscriberOperatorName: files.subscriberFromOperator(data[2]),
+						        	subscriberOperatorNameWithCode: data[2],
+						        	prefix: data[6],
+						        	originOperatorName: files.subscriberFromOperator(data[3]),
+						        	originOperatorNameWithCode: data[3],
+						        	sumTransactions: parseInt(data[4]),
+						        	successes: parseInt(data[5])
+						        }
+						        database.insertOutboundData(cell, function(){
+						        	readFromPos(pos+1); return;
+						        });
+						        readFromPos(pos+1); return;
+					        }else{
+					        	//ignore
 					        }
-					        database.insertOutboundData(cell);
-					        return;
-				        }else{
-				        	//ignore
-				        }
-				    })
-				    .on("end", function(){
-				    	stream.close();
-				    //	fs.unlink("./reports/"+reportName); //UNCOMENT
-				        console.log("Done with report: "+reportName);
-				        fs.rename("./reports/"+reportName, "./reports/Security_copy/"+reportName);
-				        return;
-				    });
-				stream.pipe(csvStream);
+					        readFromPos(pos+1); return;
+						});
+				    }
+
+				    readFromPos(0);
+				});
+
 			};
-			database.insertInboundData=function(report){
+			database.insertInboundData=function(report, callback){
 				var toSearch = {subscriberOperatorName: report.subscriberOperatorName, subscriberCountryName: report.subscriberCountryName, originOperatorName: report.originOperatorName, dataDate: report.dataDate, originCountry: report.originCountry};
-				database.reportsDataInbound.update(toSearch, { $set : report},{ upsert: true });
+				database.reportsDataInbound.update(toSearch, { $set : report},{ upsert: true }, function(err, result) {
+			        if(err){
+						console.log(err);
+			        }
+			        callback(); return;
+			    });
 	            return;
 			}
-			database.insertOutboundData=function(report){
+			database.insertOutboundData=function(report, callback){
 				var toSearch = {subscriberOperatorName: report.subscriberOperatorName, subscriberCountryName: report.subscriberCountryName, originOperatorName: report.originOperatorName, dataDate: report.dataDate};
-				database.reportsDataOutbound.update(toSearch, { $set : report},{ upsert: true });
+				database.reportsDataOutbound.update(toSearch, { $set : report},{ upsert: true }, function(err, result) {
+			        if(err){
+						console.log(err);
+			        }
+			        callback(); return;
+			    });
 	            return;
 			}
 			files.dateFromReport=function(dateStr){
@@ -213,6 +251,10 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				});
 			}
 			console.log("=>Creating crons...");
+
+			if(process.argv[2]=="-o"){
+				files.updateReportsData(); return;
+			}
 
 			//Crons
 			new CronJob({

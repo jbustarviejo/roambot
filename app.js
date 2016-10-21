@@ -1,6 +1,8 @@
 var restify = require('restify');
 var builder = require('botbuilder');
 var nodemailer = require('nodemailer');
+require('datejs');
+
 var MongoClient = require('mongodb').MongoClient;
 var fs = require('fs');
 var os = require('os');
@@ -20,7 +22,7 @@ var enableHttps=false;
 
 //Global vars
 var bot;
-var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=223cfb34-0e28-43ee-8dbb-bfca96654f3f&subscription-key=57964100a34f4d1aa3c5cd619690f610&q=');
+var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=b76ed2f0-631a-41e4-bddf-b5f5b6896fac&subscription-key=57964100a34f4d1aa3c5cd619690f610&q=');
 var dialog = new builder.IntentDialog({ recognizers: [recognizer] });
 
 console.log("=>RoamBot starting...");
@@ -150,6 +152,7 @@ function setupDialogs(){
         }, function (session, result, next) {
             console.log("=>Args received in l2\n", session.dialogData.proccesedArgs,"\n");
             session.dialogData.proccesedArgs.timePeriod.since=new Date(session.dialogData.proccesedArgs.timePeriod.since); //Fix to MS error
+            session.dialogData.proccesedArgs.timePeriod.to=new Date(session.dialogData.proccesedArgs.timePeriod.to); 
             
             if (result.response && session.dialogData.proccesedArgs) {
                 switch(result.response.entity){
@@ -366,13 +369,13 @@ var util={
         console.log('Message sent successfully!');
         console.log('Server responded with "%s"', info.response);
         });
-    }
+    },
 };
 
 var luisUtil={
     parseCountry: function(sentence){
         var countryDetected = builder.EntityRecognizer.findBestMatch(parse.countryList, sentence, 0.01);
-        console.log("Country recognition: ",countryDetected);
+        //console.log("Country recognition: ",countryDetected);
 
         if(countryDetected && countryDetected.score > 0 && countryDetected.index>=0){
             return {original: sentence, equivalency: parse.countryListEquivalency[countryDetected.index], spanish: parse.countryListES[countryDetected.index]};
@@ -421,16 +424,275 @@ var luisUtil={
         console.log("Quantity parsing, null");
         return null;
     },
-    parseTimePeriod: function(sentence){
+    parseTimePeriod: function(sentence, fulltime){
         var periodDetected = builder.EntityRecognizer.findBestMatch(parse.period, sentence, 0.20);
+        console.log("=>Period parsed: ",periodDetected);
 
         if(periodDetected && periodDetected.score > 0 && periodDetected.index>=0){
-            return {original: sentence, 
+            if(parse.periodSingle[periodDetected.index]){
+                console.log("Static period ",parse.periodSingle[periodDetected.index]);
+                return {original: sentence, 
                 equivalency: parse.periodEquivalency[periodDetected.index], 
                 single:parse.periodSingle[periodDetected.index], 
                 plural: parse.periodPlural[periodDetected.index], 
                 toSingle: parse.period2Single[periodDetected.index], 
-                toPlural: parse.period2Plural[periodDetected.index]};
+                toPlural: parse.period2Plural[periodDetected.index], 
+                isDinamic: false};
+            }else{
+                console.log("Dinamic period");
+                var toCurrent = false;
+
+                if(fulltime && fulltime.entity){
+                    var words=fulltime.entity.split(" ");
+                    var day=parse.period2Single[periodDetected.index];
+                    switch(words[0]){
+                        case "desde":
+                            toCurrent=true;
+                            dateString = "desde "+day;
+                        break;
+                        default:
+                            if(day.startsWith("el")){
+                                dateString = "d"+day;
+                            }else{
+                                dateString = "de "+day;
+                            } 
+                        break;
+                    }
+                    console.log("Time detected!: "+ words[0]);
+                }else{
+                    console.log("No fulltime");
+                    var day=parse.period2Single[periodDetected.index];
+                    if(day.startsWith("el")){
+                        dateString = "d"+day;
+                    }else{
+                        dateString = "de "+day;
+                    }                    
+                }
+
+                switch(parse.periodEquivalency[periodDetected.index]){
+                    case "ayer":                        
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.today(),
+                            dateEnd: toCurrent ? new Date() : Date.today().add(-1).days(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "antes de ayer":
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.today().add(-2).days(),
+                            dateEnd: toCurrent ? new Date() : Date.today().add(-1).days(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "semana pasada":
+                        var lastSunday=Date.today().last().sunday();
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: lastSunday.add(-6).days(),
+                            dateEnd: toCurrent ? new Date() : lastSunday,
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "mes pasado":
+                        d = new Date();
+                        if(d.getMonth()==0){
+                          var previousMonth = 11;
+                          var previousMonthYear = d.getFullYear()-1;  
+                        }else{
+                          var previousMonth=d.getMonth()-1 
+                          var previousMonthYear=d.getFullYear();  
+                        }
+                        
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: new Date(year,month),
+                            dateEnd: toCurrent ? new Date() : new Date(d.getFullYear(),d.getMonth()),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "hoy":
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.today(),
+                            dateEnd: new Date(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "lunes":
+                        var date=Date.last().monday();
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: date,
+                            dateEnd: toCurrent ? new Date() : date.add(24).hours(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "martes":
+                        var date=Date.last().tuesday();
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: date,
+                            dateEnd: toCurrent ? new Date() : date.add(24).hours(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "miércoles":
+                        var date=Date.last().wednesday();
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: date,
+                            dateEnd: toCurrent ? new Date() : date.add(24).hours(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "jueves":
+                        var date=Date.last().thursday();
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: date,
+                            dateEnd: toCurrent ? new Date() : date.add(24).hours(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "sábado":
+                        var date=Date.last().saturday();
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: date,
+                            dateEnd: toCurrent ? new Date() : date.add(24).hours(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "domingo":
+                        var date=Date.last().sunday();
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: date,
+                            dateEnd: toCurrent ? new Date() : date.add(24).hours(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "fin de semana":
+                        var date=Date.today().add(-1).days().last().saturday();
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: date,
+                            dateEnd: toCurrent ? new Date() : date.add(48).hours(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "enero":
+                        var d=new Date(Date.today().getFullYear(),Date.today().getMonth())
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.parse(d).last().january(),
+                            dateEnd: toCurrent ? new Date() : new Date(start).add(1).month(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "febrero":
+                        var d=new Date(Date.today().getFullYear(),Date.today().getMonth())
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.parse(d).last().february(),
+                            dateEnd: toCurrent ? new Date() : new Date(start).add(1).month(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "marzo":
+                        var d=new Date(Date.today().getFullYear(),Date.today().getMonth())
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.parse(d).last().march(),
+                            dateEnd: toCurrent ? new Date() : new Date(start).add(1).month(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "abril":
+                        var d=new Date(Date.today().getFullYear(),Date.today().getMonth())
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.parse(d).last().april(),
+                            dateEnd: toCurrent ? new Date() : new Date(start).add(1).month(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "mayo":
+                        var d=new Date(Date.today().getFullYear(),Date.today().getMonth())
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.parse(d).last().may(),
+                            dateEnd: toCurrent ? new Date() : new Date(start).add(1).month(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "junio":
+                        var d=new Date(Date.today().getFullYear(),Date.today().getMonth())
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.parse(d).last().june(),
+                            dateEnd: toCurrent ? new Date() : new Date(start).add(1).month(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "julio":
+                        var d=new Date(Date.today().getFullYear(),Date.today().getMonth())
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.parse(d).last().july(),
+                            dateEnd: toCurrent ? new Date() : new Date(start).add(1).month(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "agosto":
+                        var d=new Date(Date.today().getFullYear(),Date.today().getMonth())
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.parse(d).last().august(),
+                            dateEnd: toCurrent ? new Date() : new Date(start).add(1).month(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "septiembre":
+                        var d=new Date(Date.today().getFullYear(),Date.today().getMonth())
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.parse(d).last().september(),
+                            dateEnd: toCurrent ? new Date() : new Date(start).add(1).month(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "octubre":
+                        var d=new Date(Date.today().getFullYear(),Date.today().getMonth())
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.parse(d).last().october(),
+                            dateEnd: toCurrent ? new Date() : new Date(start).add(1).month(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "noviembre":
+                        var d=new Date(Date.today().getFullYear(),Date.today().getMonth())
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.parse(d).last().november(),
+                            dateEnd: toCurrent ? new Date() : new Date(start).add(1).month(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                    case "diciembre":
+                        var d=new Date(Date.today().getFullYear(),Date.today().getMonth())
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: Date.parse(d).last().december(),
+                            dateEnd: toCurrent ? new Date() : new Date(start).add(1).month(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
+                }
+            }
         }
         return null;
     },
@@ -440,6 +702,7 @@ var luisUtil={
         var direction = builder.EntityRecognizer.findEntity(args.entities, 'direction');
         var quantity = builder.EntityRecognizer.findEntity(args.entities, 'time::quantity');
         var period = builder.EntityRecognizer.findEntity(args.entities, 'time::period');
+        var fulltime = builder.EntityRecognizer.findEntity(args.entities, 'fulltime');
 
         //Get country
         if(country && country.entity){
@@ -465,32 +728,46 @@ var luisUtil={
         if(quantity && quantity.entity && period && period.entity){
             console.log("Q y P");
             quantity.equivalency=luisUtil.parseTimeQuantity(quantity.entity);
-            period.equivalency=luisUtil.parseTimePeriod(period.entity);
+
+            period.equivalency=luisUtil.parseTimePeriod(period.entity, fulltime);
 
             //Period type
             if(period.equivalency && period.equivalency.equivalency){
                 console.log("Pe2");
-                if(quantity.equivalency && quantity.equivalency.equivalency){
+                if(period.equivalency.isDinamic){
+                    console.log("Ped2");
+                    timePeriod.since = period.equivalency.dateStart;
+                    timePeriod.to = period.equivalency.dateEnd;
+                    timePeriod.string = period.equivalency.string;
+                }else if(quantity.equivalency && quantity.equivalency.equivalency){
                     console.log("Qe2 y Pe2");
                     timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * quantity.equivalency.equivalency * period.equivalency.equivalency);
+                    timePeriod.to=new Date();
                     if(quantity.equivalency.equivalency==1){
-                        timePeriod.string = period.equivalency.single+" "+period.equivalency.toSingle;   
+                        timePeriod.string = "en " + period.equivalency.single+" "+period.equivalency.toSingle;   
                     }else{
-                        timePeriod.string = period.equivalency.plural+" "+quantity.equivalency.equivalency+" "+period.equivalency.toPlural;   
+                        timePeriod.string = "en " + period.equivalency.plural+" "+quantity.equivalency.equivalency+" "+period.equivalency.toPlural;   
                     }
                 }else{
                     console.log("Pe3");
                     timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * period.equivalency.equivalency);
-                    timePeriod.string = period.equivalency.plural+" "+period.equivalency.toSingle;   
+                    timePeriod.to=new Date();
+                    timePeriod.string = "en " + period.equivalency.plural+" "+period.equivalency.toSingle;   
                 }
             }
         }else if(period && period.entity){
             console.log("P");
-            period.equivalency=luisUtil.parseTimePeriod(period.entity);
-            if(period.equivalency && period.equivalency.equivalency){
+            period.equivalency=luisUtil.parseTimePeriod(period.entity, fulltime);
+            if(period.equivalency && period.equivalency.isDinamic){
+                console.log("Ped1");
+                timePeriod.since = period.equivalency.dateStart;
+                timePeriod.to = period.equivalency.dateEnd;
+                timePeriod.string = period.equivalency.string;
+            }else if(period.equivalency && period.equivalency.equivalency){
                 console.log("Pe1");
                 timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * period.equivalency.equivalency);
-                timePeriod.string = period.equivalency.toSingle+" "+period.equivalency.single;   
+                timePeriod.to=new Date();
+                timePeriod.string = "en " + period.equivalency.toSingle+" "+period.equivalency.single;   
             }
         }
 

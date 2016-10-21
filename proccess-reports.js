@@ -56,7 +56,7 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				    allEntries = data.toString().split('\n'); 
 
 				    function readFromPos(pos){
-				    	var progress=Math.round(pos*100/allEntries.length);
+				    	var progress=Math.round(pos*10000/allEntries.length)/100;
 				    	if(progress%10==0){
 				    		console.log(progress+"%");
 				    	}

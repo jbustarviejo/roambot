@@ -119,6 +119,7 @@ function setupDialogs(){
             next(result);
         },
         function (session, result, next) {
+            console.log("=>Original msg: '",session.message.text,"'\n");
             console.log("=>Args received in l2\n", result,"\n");
 
             luisUtil.createAnswerWithData(session, result, 1);
@@ -133,6 +134,7 @@ function setupDialogs(){
             next(result);
         },
         function (session, result, next) {
+            console.log("=>Original msg: '",session.message.text,"'\n");
             console.log("=>Args received in l2\n", result,"\n");
 
             luisUtil.createAnswerWithData(session, result, 2);
@@ -389,7 +391,7 @@ var luisUtil={
         }
         //Detect from all operators
         var subscriberDetected = builder.EntityRecognizer.findBestMatch(parse.subscribersList, sentence, 0.01);
-        console.log("subscriber recognition from all: ", sentence);
+        //console.log("subscriber recognition from all: ", sentence);
 
         if(subscriberDetected && subscriberDetected.score > 0 && subscriberDetected.index>=0){
             var detected = {original: sentence, equivalency: parse.subscribersListEquivalency[subscriberDetected.index]};
@@ -723,6 +725,7 @@ var luisUtil={
 
         var timePeriod = {};
         timePeriod.since = new Date(new Date().getTime() - (1000 * 60) * 60 * 24);
+        timePeriod.to = new Date();
         timePeriod.string = "las últimas 24 horas";
 
         if(quantity && quantity.entity && period && period.entity){
@@ -774,7 +777,7 @@ var luisUtil={
         return {country: country, subscriber: subscriber, direction: directionParsed, timePeriod: timePeriod};
     },
     createAnswerWithData: function(session, result, metricCode){
-        console.log("Received for compute: ", result);
+        console.log("=>Received for compute: ", result,"\n");
 
         if(result.country && result.country.equivalency && result.country.equivalency.equivalency){
             countryEntity=result.country.equivalency;

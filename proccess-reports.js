@@ -1,7 +1,7 @@
 //Proccess reports
 var MongoClient = require('mongodb').MongoClient;
 var fs = require('fs');
-var csv = require("fast-csv");
+var csv = require('csv');
 var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
 var CronJob = require('cron').CronJob;
@@ -25,53 +25,60 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 		database.reportsDataOutbound = db.collection('reportsDataOutbound',function(){
 			files.updateReportsData=function(){
 				fs.readdir("./reports", function(err, items) {
-					//console.log("items",items);
-
 					function readReportInPos(post){
-						//console.log("pos recibida",post, " Archivo"+items[post]);
+
+						fileToScrap=items[post];
+
 						if(post>=items.length){
-							console.log("=>All finish!!"); return;
+							console.log("=>All finish!!"); 
+							return;
 						}
-				        if(items[post].endsWith(".csv") && (items[post].startsWith("inbound") || items[post].startsWith("outbound"))){
-							files.readReport(items[post], function(){
-								//console.log("Nueva pos va  aser ",post+1)
+
+				        if(fileToScrap.endsWith(".csv") && (fileToScrap.startsWith("inbound") || fileToScrap.startsWith("outbound"))){
+							files.readReport(fileToScrap, function(){
+								fs.rename("./reports/"+fileToScrap, "./reports/Security_copy/"+fileToScrap);
 								readReportInPos(post+1); return;
 							});
+							return;
 						}else{
-							console.log("File ignored!: "+items[post]);
-							readReportInPos(post+1); return;
+							console.log("File ignored!: "+fileToScrap);
+							readReportInPos(post+1); 
+							return;
 						}
 						return;
 				    }
-				    readReportInPos(0);
+				    readReportInPos(0); 
+				    return;
 				});
 			};
+
 			files.readReport=function(reportName, callback){
 				fs.readFile("./reports/"+reportName, function (err, data) {
-					console.log("Proccessing file: "+"./reports/"+reportName);
+
+					console.log("Report "+reportName);
+					allEntries = data.toString().split('\n'); 
+
 					if(!data){
 						console.log("No data ",err);
 						callback(); return;
 					}
-				    allEntries = data.toString().split('\n'); 
+				
+					readFromPos(reportName,allEntries,0);
+					function readFromPos(reportName,allEntries,pos){
+						if(pos%Math.round(allEntries.length/10)==0){
+				    		console.log(Math.round(pos*10000/allEntries.length)/100+"%");
+				    	}
+						if(pos>=allEntries.length){
+				    		console.log("Finish! "+reportName);
+				    		callback(); return;
+				    	}
 
-				    function readFromPos(pos){
-				    	var progress=Math.round(pos*10000/allEntries.length)/100;
-				    	if(progress%10==0){
-				    		console.log(progress+"%");
-				    	}
-				    	if(pos>=allEntries.length-1){
-				    		fs.rename("./reports/"+reportName, "./reports/Security_copy/"+reportName, function(){
-				    			callback(); return;
-				    		});
-				    		return;
-				    	}
-				    	csv.fromString(allEntries[pos], {delimiter: ";"})
-						.on("data", function(data){
-							//console.log("Data! "+data, pos)
-						 	if(data[0]=="Hour" || data[0]=="Day" || data.length<=0){ //Skip headers
-					        	readFromPos(pos+1); return;
+				    	csv.parse(allEntries[pos],  {delimiter: ";"}, function(err, data){
+				    		data=data[0];
+						 	if(!data || data[0]=="Hour" || data[0]=="Day" || data.length<=0){ //Skip headers
+					        	readFromPos(reportName,allEntries,pos+1); return;
 					        }
+
 					        if(reportName.startsWith("inbound")){
 								var cell={
 						        	dataDate: files.dateFromReport(data[0]),
@@ -86,7 +93,7 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 						        	successes: parseInt(data[5])
 						        }
 						        database.insertInboundData(cell, function(){
-						        	readFromPos(pos+1); return;
+						        	readFromPos(reportName,allEntries,pos+1); return;
 						        });
 						        return;
 					        }else if(reportName.startsWith("outbound")){
@@ -103,19 +110,18 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 						        	successes: parseInt(data[5])
 						        }
 						        database.insertOutboundData(cell, function(){
-						        	readFromPos(pos+1); return;
+						        	readFromPos(reportName,allEntries,pos+1); return;
 						        });
-						        readFromPos(pos+1); return;
-					        }else{
-					        	//ignore
+						        return;
 					        }
-					        readFromPos(pos+1); return;
-						});
+
+				    		readFromPos(reportName,allEntries,pos+1); return;
+				    	});
+						return;
 				    }
-
-				    readFromPos(0);
+				    return;
 				});
-
+				return;
 			};
 			database.insertInboundData=function(report, callback){
 				var toSearch = {subscriberOperatorName: report.subscriberOperatorName, subscriberCountryName: report.subscriberCountryName, originOperatorName: report.originOperatorName, dataDate: report.dataDate, originCountry: report.originCountry};

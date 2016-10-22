@@ -11,6 +11,7 @@
   "dependencies": {
     "botbuilder": "^3.2.3",
     "cron": "^1.1.0",
+    "csv": "^1.1.0",
     "datejs": "^1.0.0-rc3",
     "fast-csv": "^2.1.0",
     "mongodb": "^2.2.10",

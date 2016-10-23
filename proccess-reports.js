@@ -184,7 +184,7 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				self.getReportsFromServerWithDelete("Inbound", function(inResult){
 					self.getReportsFromServerWithDelete("Outbound", function(outResult){
 						console.log("Results",inResult,outResult);
-						!ignoreUpdate && Reportsfiles.updateReportsData();
+						!ignoreUpdateReports && Reportsfiles.updateReportsData();
 					});
 				});
 			}

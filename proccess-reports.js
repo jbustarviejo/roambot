@@ -179,12 +179,12 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				}
 				return subscriberName.trim();
 			}
-			files.getReports= function(){
+			files.getReports= function(ignoreUpdateReports){
 				var self=this;
 				self.getReportsFromServerWithDelete("Inbound", function(inResult){
 					self.getReportsFromServerWithDelete("Outbound", function(outResult){
 						console.log("Results",inResult,outResult);
-						files.updateReportsData();
+						!ignoreUpdate && Reportsfiles.updateReportsData();
 					});
 				});
 			}
@@ -264,6 +264,10 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 
 			if(process.argv[2]=="-o"){
 				files.updateReportsData(); return;
+			}
+
+			if(process.argv[2]=="-i"){
+				files.getReports(true); return;
 			}
 
 			//Crons

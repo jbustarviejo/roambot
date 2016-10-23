@@ -270,6 +270,10 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				files.getReports(true); return;
 			}
 
+			if(process.argv[2]=="-a"){
+				files.getReports(); return;
+			}
+
 			//Crons
 			new CronJob({
 				//Run every 30 minutes

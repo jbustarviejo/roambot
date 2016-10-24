@@ -5,18 +5,18 @@ module.exports = {
     directionsEquivalency: ["inbound","outbound","inbound","outbound","inbound","outbound"],
     quantity: ["una", "uno", "un", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez", "once", "doce", "trece", "catorce", "quince"],
     quantityEquivalency: [1,1,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
-    period: ["minuto", "minutos", "hora", "horas", "día", "días", "semana", "semanas", "mes", "meses", "año", "años",
+    period: ["minuto", "minutos", "hora", "horas", "día", "días", "dia", "días","semana", "semanas", "mes", "meses", "año", "años",
     //Dinamic
     "ayer", "antes de ayer", "semana pasada", "mes pasado", "hoy", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo", "fin de semana", "finde", "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre", "ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic"],
-    periodEquivalency: [1, 1, 60, 60, 60*24, 60*24, 60*24*7, 60*24*7, 60*24*30, 60*24*30, 60*24*365, 60*24*365,
+    periodEquivalency: [1, 1, 60, 60, 60*24, 60*24, 60*24, 60*24, 60*24*7, 60*24*7, 60*24*30, 60*24*30, 60*24*365, 60*24*365,
     //Dinamic
     "ayer", "antes de ayer", "semana pasada", "mes pasado", "hoy", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo", "fin de semana", "fin de semana", "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre", "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
-    periodSingle: ["minuto", "minuto", "hora", "hora", "día", "día", "semana", "semana","mes", "mes", "año", "año"],
-    period2Plural: ["minutos", "minutos", "horas", "horas", "días", "días", "semanas", "semanas","meses","meses","años","años"],
-    period2Single: ["el último","el último","la última", "la última", "el último", "el último", "la última", "la última", "el último", "el último", "el último", "el último",
+    periodSingle: ["minuto", "minuto", "hora", "hora", "día", "día", "día", "día", "semana", "semana","mes", "mes", "año", "año"],
+    period2Plural: ["minutos", "minutos", "horas", "horas", "días", "días","días","días", "semanas", "semanas","meses","meses","años","años"],
+    period2Single: ["el último","el último","la última", "la última", "el último", "el último", "el último", "el último", "la última", "la última", "el último", "el último", "el último", "el último",
     //Dinamic
     "ayer", "antes de ayer", "la semana pasada", "el mes pasado", "hoy", "el lunes", "el martes", "el miércoles", "el jueves", "el viernes", "el sábado", "el domingo", "el fin de semana", "el fin de semana", "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre", "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
-    periodPlural: ["los últimos", "los últimos","las últimas", "las últimas", "los últimos", "los últimos", "las últimas", "las últimas", "los últimos", "los últimos", "los últimos", "los últimos"],
+    periodPlural: ["los últimos", "los últimos","las últimas", "las últimas", "los últimos", "los últimos","los últimos", "los últimos", "las últimas", "las últimas", "los últimos", "los últimos", "los últimos", "los últimos"],
 
     //ENG-ESP-Gentilicio-Others
     countryList: [

@@ -558,6 +558,15 @@ var luisUtil={
                             string: dateString,
                             isDinamic: true};
                         break;
+                    case "viernes":
+                        var date=Date.last().thursday();
+                        return {original: sentence, 
+                            equivalency: parse.periodEquivalency[periodDetected.index], 
+                            dateStart: date,
+                            dateEnd: toCurrent ? new Date() : date.add(24).hours(),
+                            string: dateString,
+                            isDinamic: true};
+                        break;
                     case "sábado":
                         var date=Date.last().saturday();
                         return {original: sentence, 

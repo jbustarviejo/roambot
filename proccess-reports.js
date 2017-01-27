@@ -213,11 +213,11 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 				var fileDirection="reports/"+direction.toLowerCase()+"_"+uuidReport+".csv";
 
 				var startCommand;
-				if(os.hostname()=="MacBook-de-jbustarviejogmailcom.local"){
+				//if(os.hostname()=="MacBook-de-jbustarviejogmailcom.local"){
 		        	startCommand="sshpass";
-		        }else{
+		        /*}else{
 		        	startCommand="/usr/bin/sshpass";
-		        }
+		        }*/
 
 				var child = exec(startCommand+' ssh mclaw@213.140.41.202 ssh bo cat "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv" > '+fileDirection, // command line argument directly in string
 				function (error, stdout, stderr) {
@@ -244,11 +244,11 @@ MongoClient.connect('mongodb://127.0.0.1:27017/roambot', function(err, db) {
 			files.RemoveReportsInServerByDirection = function(direction, callback){	
 				console.log("Removing "+direction+" in server...");
 				var startCommand;
-				if(os.hostname()=="MacBook-de-jbustarviejogmailcom.local"){
+				//if(os.hostname()=="MacBook-de-jbustarviejogmailcom.local"){
 		        	startCommand="sshpass";
-		        }else{
+		        /*}else{
 		        	startCommand="/usr/bin/sshpass";
-		        }
+		        }*/
 				var child = exec(startCommand+' ssh mclaw@213.140.41.202 ssh bo rm "/var/opt/anritsu/mclaw/BO_reports/'+direction+'*.csv"', // command line argument directly in string
 				function (error, stdout, stderr) {
 				    console.log('stdout: ' + stdout);

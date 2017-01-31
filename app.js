@@ -295,7 +295,7 @@ function setupDialogs(){
             console.log("Session received",session);
             database.getUser(session.message.user.id, function(dbUser){
                 session.userData.dbUser=dbUser;
-                if(session.userData.dbUser.authorized===true){
+                if(session.userData && session.userData.dbUser && session.userData.dbUser.authorized===true){
                     //session.send("¡Genial! El administrador te ha dado de alta en el sistema y ya puedes empezar a utilizar mis servicios. Simplemente pregúntame por alguna estadística, de manera natural como _'Oye Roambot, dime el número de roamers en Perú de ayer'_");
                     session.send("¡Genial! El administrador te ha dado de alta en el sistema ¡Ahora me toca entrenar! Simplemente pregúntame por alguna estadística, de manera natural como _'Oye Roambot, dime el número de roamers outbound de Chile de ayer'_");
                     session.endDialog();

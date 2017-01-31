@@ -296,9 +296,11 @@ function setupDialogs(){
             database.getUser(session.message.user.id, function(dbUser){
                 session.userData.dbUser=dbUser;
                 
-                if(session.userData ==null || session.userData.dbUser==null){
+                if(session.userData == null || session.userData.dbUser==null){
+                    console.log("dbUser nulo");
                     session.send("Un segundo. He visto algo raro en la base de datos... Vamos a empezar la conversación de nuevo...");
                     session.endDialog();
+                    return;
                 }
 
                 if(session.userData.dbUser.authorized===true){

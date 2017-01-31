@@ -77,8 +77,8 @@ console.log("=>RoamBot starting...");
             // Setup Restify Server
             if(enableHttps){
                 var server = restify.createServer({
-                  certificate: fs.readFileSync('/home/ubuntu/.ssh/server.crt'),
-                  key: fs.readFileSync('/home/ubuntu/.ssh/server.key'),
+                  certificate: fs.readFileSync('/home/botijo/.ssh/server.crt'),
+                  key: fs.readFileSync('/home/botijo/.ssh/server.key'),
                   name: 'Roambot',
                 });
             }else{
@@ -274,7 +274,7 @@ function setupDialogs(){
                     break;
                     case 1:
                         session.send("¡Genial! Ese me vale");
-                        util.sendAlertByEmailToAdmin(emailEntered, session.userData.dbUser.userName);
+                        //util.sendAlertByEmailToAdmin(emailEntered, session.userData.dbUser.userName);
                         session.send("Escribe un email a grtu.sistemas@outlook.es indicando tu email, pidiendo permiso para acceder y ¡a esperar! (time)");
                         session.userData.dbUser.email=emailEntered;
                         database.updateUser(session.userData.dbUser, function(){

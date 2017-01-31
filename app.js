@@ -265,7 +265,7 @@ function setupDialogs(){
                     case 1:
                         session.send("¡Genial! Ese me vale");
                         util.sendAlertByEmailToAdmin(emailEntered, session.userData.dbUser.userName);
-                        session.send("Ahora a esperar... el administrador se pondrá en contacto contigo por tu email (time)");
+                        session.send("Escribe un email a grtu.sistemas@outlook.es indicando tu email, pidiendo permiso para acceder y ¡a esperar! (time)");
                         session.userData.dbUser.email=emailEntered;
                         database.updateUser(session.userData.dbUser, function(){
                             session.endDialog();

@@ -22,7 +22,7 @@ var enableHttps=false;
 
 //Global vars
 var bot;
-var recognizer = new builder.LuisRecognizer('https://api.projectoxford.ai/luis/v1/application?id=b76ed2f0-631a-41e4-bddf-b5f5b6896fac&subscription-key=57964100a34f4d1aa3c5cd619690f610&q=');
+var recognizer = new builder.LuisRecognizer('https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/e7ff0183-022c-47e0-9677-15e3c31f9c47?subscription-key=bc917dd775a74d8ab6efb4d2e1116a6d&verbose=true&q=');
 var dialog = new builder.IntentDialog({ recognizers: [recognizer] });
 
 console.log("=>RoamBot starting...");

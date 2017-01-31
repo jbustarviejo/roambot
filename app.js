@@ -201,16 +201,19 @@ function setupDialogs(){
                     database.users.insert({_id: message.user.id ,createdAt: new Date(), userName: message.user.name, authorized: false, welcomed: true});
 
                     var reply = new builder.Message().address(message.address).text("¡Hola%s! Soy Roambot, el bot de estadísticas de roaming de GRTU, gracias por agregarme :)", name);
+                    console.log("Hello! msg");
                     bot.send(reply);
                 }else{
                     name = util.getFirstName(message.user ? message.user.name: null);
                     name = name ? " "+name : "";
 
                     var reply = new builder.Message().address(message.address).text("¡Hola de nuevo%s! ;)", name);
+                    console.log("Hello again msg");
                     bot.send(reply);
                 }
             });
         } else {
+            console.log("Not add action...");
             // delete their data
         }
     });

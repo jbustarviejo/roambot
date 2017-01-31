@@ -91,8 +91,8 @@ console.log("=>RoamBot starting...");
               
             // Create chat bot
             var connector = new builder.ChatConnector({
-                appId: "4e22b0fa-96e8-49c7-abeb-7b0efb9149db",
-                appPassword: "XofU1vyfYNCLxmfvtRdkfaD"
+                appId: "830a0626-303a-4f26-98e9-c7978522fa05",
+                appPassword: "PbkWo2rq2zQGwzXWkdBynKQ"
             });
             bot = new builder.UniversalBot(connector);
             server.post('/', connector.listen());

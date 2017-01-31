@@ -180,9 +180,8 @@ function setupDialogs(){
 
     dialog.matches('hello', [
         function (session, args, next) {
-                session.send("¡Hola! ;)");
-                session.endDialog();
-            }
+            session.send("¡Hola! ;)");
+            session.endDialog();
         }
     ]);
 
